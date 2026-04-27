@@ -1,0 +1,72 @@
+---
+title: "Decoding LTR, LTR-Net, and Passport systems in SDRTrunk"
+description: "How SDRTrunk decodes LTR and LTR-Net using 300 bps inband signaling. Covers OSW/ISW message direction, channel setup, and the related Passport protocol."
+---
+
+SDRTrunk supports **LTR (Logic Trunked Radio)** in both its standard form and the enhanced **LTR-Net** variant. LTR is a trunking protocol where the control data is carried inband within each channel's audio subcarrier rather than on a separate control channel. This page explains how LTR trunking works, the differences between LTR Standard and LTR-Net, and how to configure SDRTrunk for each.
+
+## How LTR trunking works
+
+Unlike P25 or MPT-1327, LTR has no dedicated control channel. Instead, every channel in the system continuously transmits trunking data at **300 bps** embedded below the audio — either as an Outbound Signaling Word (OSW) from the repeater to radios, or as an Inbound Signaling Word (ISW) from radios to the repeater.
+
+When a call is active, the OSW stream on that channel carries the talkgroup and home repeater information. Radios scan all channels looking for OSW messages that match their programmed talkgroups and home repeater. SDRTrunk mirrors this behavior: when it decodes an LTR channel, it extracts the embedded signaling to identify the talkgroup and call state.
+
+<Info>
+  Because trunking data is embedded in each channel rather than centralized, monitoring an LTR system fully typically requires decoding all channels simultaneously. SDRTrunk's polyphase channelizer makes this practical with a single wide-bandwidth SDR tuner.
+</Info>
+
+## LTR Standard vs LTR-Net
+
+<Tabs>
+  <Tab title="LTR Standard">
+    The original LTR protocol (registered as `LTR` in SDRTrunk, 300 bps) uses a fixed 40-bit message format. Messages carry the home repeater ID, group ID, free channel status, and go-tone bits.
+
+    The `LTRStandardDecoder` processes demodulated audio samples through an FSK demodulator and a message framer synchronized to either the OSW or ISW sync pattern, depending on the configured message direction.
+
+    **Configuration options:**
+    - **Message direction** — set to **OSW** (outbound) to monitor repeater-to-radio signaling, or **ISW** (inbound) to monitor radio-to-repeater signaling. OSW is the standard choice for monitoring.
+  </Tab>
+  <Tab title="LTR-Net">
+    LTR-Net (`LTR_NET`, 300 bps) is an enhanced version of LTR that adds network-level messaging while retaining the same 300 bps inband signaling approach and 40-bit message length.
+
+    The `LTRNetDecoder` uses the same FSK demodulator infrastructure as LTR Standard but applies LTR-Net specific message parsing to support the extended message set. LTR-Net messages include additional network and site identifiers beyond the basic LTR message fields.
+
+    **Configuration options:**
+    - **Message direction** — same as LTR Standard: **OSW** or **ISW**. OSW is the typical monitoring choice.
+  </Tab>
+</Tabs>
+
+## Setting up an LTR channel
+
+<Steps>
+  <Step title="Identify the LTR channel frequencies">
+    LTR systems do not have a single control channel. Find the channel frequencies for your system on [RadioReference.com](https://www.radioreference.com) or local frequency databases.
+  </Step>
+  <Step title="Open the Playlist Editor and add a channel">
+    In SDRTrunk, open **View > Playlist Editor**, select your playlist, and click **Add Channel**.
+  </Step>
+  <Step title="Select the decoder type">
+    Set the **Decoder** field to **LTR** for LTR Standard systems or **LTR-Net** for LTR-Net systems.
+  </Step>
+  <Step title="Enter the channel frequency">
+    Set the **Frequency** to one of the system's channel frequencies. To monitor the full system, add a separate channel entry for each frequency in the system.
+  </Step>
+  <Step title="Set the message direction">
+    In the decoder configuration, set **Message direction** to **OSW** for standard monitoring. Use **ISW** only if you have a specific reason to monitor inbound (radio-to-repeater) signaling.
+  </Step>
+  <Step title="Assign an alias list and enable">
+    Attach an alias list so talkgroup identifiers resolve to meaningful names. Click **Enable** to begin decoding.
+  </Step>
+</Steps>
+
+## Passport protocol
+
+The **Passport** protocol (`PASSPORT`, 300 bps) is a similar inband trunking standard that uses the same basic approach as LTR — 300 bps signaling embedded in each channel. SDRTrunk includes a Passport decoder as a primary decoder type.
+
+<Note>
+  Passport is listed as a primary decoder in SDRTrunk (`DecoderType.PASSPORT`) and appears in the decoder selection list. Configuration follows the same basic steps as LTR: select the Passport decoder, enter a channel frequency, and assign an alias list.
+</Note>
+
+## Talkgroup aliasing
+
+LTR and LTR-Net use numeric group IDs carried in the OSW stream. SDRTrunk supports talkgroup aliasing for both protocols — assign names and colors in the alias list to identify groups as they appear in the event log. Passport also supports talkgroup aliasing.

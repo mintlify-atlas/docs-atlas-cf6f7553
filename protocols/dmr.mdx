@@ -1,0 +1,87 @@
+---
+title: "Decoding DMR trunked and conventional systems in SDRTrunk"
+description: "Configure SDRTrunk to decode DMR trunked and conventional systems. Covers TDMA timeslots, traffic channel following, configuration options, and JMBE audio."
+---
+
+SDRTrunk decodes the **DMR (Digital Mobile Radio)** protocol, an ETSI standard widely used by commercial and business radio systems and increasingly by public safety agencies. DMR operates at **9,600 bps** using C4FM modulation and packs two independent voice or data channels into a single 12.5 kHz channel using TDMA. This page explains how DMR works, what SDRTrunk supports, and how to set up a DMR channel.
+
+## How DMR TDMA works
+
+DMR divides each 12.5 kHz channel into two **timeslots** that alternate in time — timeslot 1 and timeslot 2. Each timeslot carries a fully independent voice or data channel. This doubles the traffic capacity of a single frequency compared to conventional FM.
+
+SDRTrunk's `DMRDecoder` processes the DQPSK-demodulated symbol stream and separates bursts by timeslot. The decoder uses a soft symbol processor with primary and lagging sync detectors to maintain accurate symbol alignment and identifies three operating modes: base station, mobile, and direct (simplex).
+
+## Trunked vs conventional DMR
+
+<Tabs>
+  <Tab title="Trunked DMR (Tier III)">
+    Trunked DMR systems use a dedicated control channel to assign calls to traffic channels dynamically, similar to P25. SDRTrunk monitors the control channel and allocates traffic channel decoders as calls are granted.
+
+    Several proprietary trunking flavors exist and are supported:
+
+    - **Motorola Capacity Plus** — single-site trunking where each channel can act as a rest channel
+    - **Motorola Capacity Max** — wide-area multi-site Motorola trunking
+    - **Connect Plus** — Motorola multi-site trunking using CSBK control messaging
+    - **Hytera XPT** — Hytera's single-site trunking variant
+
+    SDRTrunk's `DMRDecoderState` decodes CSBK (Control Signaling Block) messages from all of these systems to extract channel grants and track active calls.
+  </Tab>
+  <Tab title="Conventional DMR (Tier II)">
+    On a conventional (non-trunked) DMR channel, there is no control channel. Both timeslots carry independent calls directly, and channel assignments are pre-configured rather than dynamically granted.
+
+    For conventional DMR, configure SDRTrunk on the specific channel frequency. The decoder monitors both timeslots simultaneously and logs call events for each independently.
+  </Tab>
+</Tabs>
+
+## Configuration options
+
+The `DecodeConfigDMR` class exposes several settings you can adjust in the SDRTrunk channel editor:
+
+| Option | Default | Description |
+|---|---|---|
+| Traffic channel pool size | System default | Maximum number of simultaneous traffic channel decoders. Reduce if the host computer is overwhelmed on busy systems. |
+| Ignore data calls | Enabled | When enabled, SDRTrunk does not allocate traffic channel decoders for data-only grants, reducing CPU load. |
+| Ignore CRC checksums | Disabled | Disabling CRC validation can help decode degraded signals at the cost of some false-positive messages. |
+| Use compressed talkgroups | Disabled | Enable for Hytera Tier III systems that use the compressed talkgroup format described in ETSI 102 361-2. |
+| Timeslot map | Empty | For MotoTRBO systems, maps logical channel numbers to specific frequencies. |
+
+## Setting up a DMR channel
+
+<Steps>
+  <Step title="Identify the system type and frequency">
+    Determine whether the system is trunked or conventional and note the control channel (for trunked) or channel frequency (for conventional). [RadioReference.com](https://www.radioreference.com) lists DMR systems by region.
+  </Step>
+  <Step title="Open the Playlist Editor and add a channel">
+    In SDRTrunk, open **View > Playlist Editor**, select your playlist, and click **Add Channel**.
+  </Step>
+  <Step title="Set the decoder to DMR">
+    In the **Decoder** field, select **DMR**. The configuration panel shows DMR-specific options.
+  </Step>
+  <Step title="Enter the frequency">
+    Set the **Frequency** to the control channel frequency for trunked systems, or the channel frequency for conventional systems.
+  </Step>
+  <Step title="Adjust configuration options">
+    Review the traffic channel pool size and the ignore data calls setting. For conventional-only deployments, the traffic channel pool size is irrelevant. For Hytera systems, enable compressed talkgroups if needed.
+  </Step>
+  <Step title="Assign an alias list and enable">
+    Attach an alias list so talkgroup and radio IDs resolve to names. Click **Enable** to start decoding.
+  </Step>
+</Steps>
+
+## Timeslot handling
+
+The DMR decoder produces messages tagged with timeslot 1 or timeslot 2. In the SDRTrunk event log, each timeslot appears as a separate event stream. Alias lists apply to both timeslots — if a talkgroup appears on either timeslot it will resolve to the same alias.
+
+For trunked systems, the traffic channel manager allocates a separate decoder per physical frequency. On that traffic channel, one timeslot carries the active call and the other may be idle or carry a separate call.
+
+## Audio decoding and JMBE
+
+DMR voice uses the **AMBE+** codec. SDRTrunk cannot decode AMBE+ audio without the external JMBE library.
+
+<Warning>
+  Without JMBE, SDRTrunk decodes all DMR signaling, talkgroup activity, and metadata but produces **no audio**. Download JMBE from the [SDRTrunk releases page](https://github.com/DSheirer/sdrtrunk/releases) and place the JAR in the same directory as the SDRTrunk application.
+</Warning>
+
+## Encryption
+
+DMR supports Basic Privacy (BP) and Enhanced Privacy (EP) encryption. SDRTrunk **cannot decrypt encrypted DMR calls**. Encrypted calls are detected and logged — including talkgroup, radio ID, and any embedded encryption parameters — but produce no audio output.

@@ -1,0 +1,66 @@
+---
+title: "Supported SDR hardware in SDRTrunk: overview and setup"
+description: "SDRTrunk supports a wide range of USB and sound card SDR hardware. Learn which devices are compatible and how to choose the right one."
+---
+
+SDRTrunk receives radio signals through USB Software Defined Radio (SDR) hardware connected to your computer. This page lists all supported hardware families and links to detailed setup guides for each device.
+
+<Note>
+  SDRTrunk does not transmit. All supported hardware is used in receive-only mode, regardless of the device's hardware transmit capabilities.
+</Note>
+
+## Supported hardware families
+
+<CardGroup cols={2}>
+  <Card title="RTL-SDR (RTL2832U)" icon="usb" href="/hardware/rtlsdr">
+    Low-cost USB DVB-T dongles repurposed as wide-band SDR receivers. Supports E4000, R820T, FC0012, and FC0013 tuner chipsets covering roughly 24 MHz to 1.766 GHz.
+  </Card>
+  <Card title="HackRF" icon="radio" href="/hardware/hackrf">
+    Great Scott Gadgets HackRF One, Jawbreaker, and RAD1O. Covers 1 MHz to 6 GHz with sample rates up to 20 MHz.
+  </Card>
+  <Card title="Airspy" icon="signal" href="/hardware/airspy">
+    Airspy R820T and Mini covering 24 MHz to 1.8 GHz with high dynamic range and sample rates up to 10 MHz.
+  </Card>
+  <Card title="SDRPlay RSP" icon="microchip" href="/hardware/sdrplay">
+    RSP1, RSP1A, RSP1B, RSP2, RSPduo (both tuners), and RSPdx covering 100 kHz to 2 GHz. Requires the SDRPlay API to be installed separately.
+  </Card>
+</CardGroup>
+
+## All supported devices
+
+| Family | Models | Frequency range | Interface |
+|--------|--------|-----------------|-----------|
+| RTL-SDR | E4000, R820T/R820T2, R828D, FC0012, FC0013 | 24 MHz – 1.766 GHz (varies by chipset) | USB |
+| HackRF | One, Jawbreaker, RAD1O | 1 MHz – 6 GHz | USB |
+| Airspy | R820T, Mini | 24 MHz – 1.8 GHz | USB |
+| SDRPlay | RSP1, RSP1A, RSP1B, RSP2, RSPduo Tuner 1, RSPduo Tuner 2, RSPdx | 100 kHz – 2 GHz | USB |
+| Funcube Dongle | Pro, Pro Plus | Varies by model | USB (sound card) |
+| Recording | Baseband recording files | N/A (playback) | File |
+
+## Sound card–based devices
+
+The **Funcube Dongle Pro** and **Funcube Dongle Pro Plus** are supported via your system's sound card input rather than a direct USB driver. SDRTrunk enumerates these as sound card tuner sources.
+
+## Recording source
+
+SDRTrunk can play back baseband IQ recordings as a virtual tuner source. This lets you process previously recorded signals without a physical SDR device connected. Select the **Recording** source type in the tuner manager to load a baseband file.
+
+## General configuration notes
+
+Every tuner in SDRTrunk shares a common set of configuration parameters:
+
+- **Center frequency** — the frequency the tuner is tuned to, in Hz. SDRTrunk places individual channels within the tuner's bandwidth.
+- **Sample rate** — the bandwidth captured by the tuner. Higher rates allow more channels to be decoded simultaneously, at the cost of USB bandwidth and CPU usage.
+- **PPM frequency correction** — corrects for oscillator inaccuracy in your hardware. Most RTL-SDR dongles require a correction of ±50 ppm or more. HackRF, Airspy, and SDRPlay devices are generally more accurate.
+- **Gain** — controls the amplification chain. Too little gain leads to a weak signal; too much causes overloading and distortion. Device-specific gain stages are described in each hardware page.
+
+<Tip>
+  Start with a center frequency in the middle of the band you want to monitor. Set gain to around 50–60% of maximum and adjust from there based on the signal levels you observe.
+</Tip>
+
+## Choosing hardware
+
+- **RTL-SDR** — best starting point. Inexpensive and widely available, with good community support.
+- **Airspy** — higher dynamic range and lower noise figure than RTL-SDR. Good for congested urban environments.
+- **HackRF** — very wide frequency coverage and the largest sample rate, useful when you need to monitor a broad swath of spectrum at once.
+- **SDRPlay RSP** — high-performance receivers with built-in IF filtering. The RSPduo supports simultaneous operation on two independent frequency bands.

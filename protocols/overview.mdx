@@ -1,0 +1,69 @@
+---
+title: "Radio protocols SDRTrunk can decode: P25, DMR, and more"
+description: "An overview of every radio protocol SDRTrunk can decode, from trunked digital standards like P25 and DMR to analog, conventional, and signaling protocols."
+---
+
+SDRTrunk supports a wide range of analog and digital radio protocols, spanning trunked systems, conventional voice channels, and in-band signaling. This page summarizes every protocol available in SDRTrunk and links to dedicated pages for the protocols that need detailed setup instructions.
+
+## Trunked protocols
+
+Trunked systems dynamically assign calls to available frequencies using a control channel. SDRTrunk monitors the control channel and automatically follows calls to traffic channels as they are assigned.
+
+| Protocol | Bit rate | Notes |
+|---|---|---|
+| P25 Phase 1 (APCO-25) | 9,600 bps | C4FM or simulcast (LSM) modulation |
+| P25 Phase 2 (APCO-25 P2) | 12,000 bps | TDMA, 2 timeslots per 12.5 kHz channel |
+| DMR | 9,600 bps | TDMA, 2 timeslots per 12.5 kHz channel |
+| MPT-1327 | 1,200 bps | Analog trunking standard |
+| LTR | 300 bps | Logic Trunked Radio, inband signaling |
+| LTR-Net | 300 bps | Enhanced LTR with network messaging |
+| Passport | 300 bps | Similar inband trunking approach to LTR |
+
+<Note>
+  To find the control channel frequency and system type for your local area, check [RadioReference.com](https://www.radioreference.com) and search for your county or city.
+</Note>
+
+## Digital voice protocols
+
+SDRTrunk decodes digitally encoded voice for P25 and DMR. Both standards use Multi-Band Excitation (MBE) codecs — IMBE for P25 Phase 1, AMBE+ for P25 Phase 2, and AMBE+ for DMR.
+
+<Warning>
+  Digital voice audio playback requires the optional **JMBE library**. Without it, SDRTrunk decodes signaling and metadata but produces no audio for P25 or DMR calls. Download JMBE from the [SDRTrunk releases page](https://github.com/DSheirer/sdrtrunk/releases) and place it alongside the SDRTrunk JAR.
+</Warning>
+
+## Conventional and analog protocols
+
+SDRTrunk can also tune conventional (non-trunked) channels:
+
+| Protocol | Description |
+|---|---|
+| NBFM | Narrowband FM — standard analog voice |
+| AM | Amplitude modulation — used in aviation and some legacy systems |
+
+## Auxiliary signaling decoders
+
+These decoders run alongside a primary decoder and extract in-band signaling from the demodulated audio channel:
+
+| Protocol | Bit rate | Description |
+|---|---|---|
+| MDC-1200 | 1,200 bps | Motorola radio ID signaling |
+| Fleetsync II | 1,200 bps | Kenwood radio ID and status signaling |
+| DCS | 134 bps | Digital Coded Squelch tone identification |
+| Tait 1200 | 1,200 bps | Tait radio ID signaling |
+
+## Protocol pages
+
+<CardGroup cols={2}>
+  <Card title="P25 Phase 1 and 2" icon="shield" href="/protocols/p25">
+    APCO-25 digital voice standard used by public safety. Covers Phase 1 C4FM/LSM and Phase 2 TDMA, trunking setup, and JMBE audio.
+  </Card>
+  <Card title="DMR" icon="radio" href="/protocols/dmr">
+    ETSI Digital Mobile Radio — TDMA with 2 timeslots per channel. Used by commercial and public safety systems worldwide.
+  </Card>
+  <Card title="MPT-1327" icon="tower-broadcast" href="/protocols/mpt1327">
+    Analog trunked radio standard widely deployed in the UK and internationally. 1,200 bps AFSK signaling on the control channel.
+  </Card>
+  <Card title="LTR and LTR-Net" icon="sitemap" href="/protocols/ltr">
+    Logic Trunked Radio with inband 300 bps signaling. Covers LTR Standard, LTR-Net, and the related Passport protocol.
+  </Card>
+</CardGroup>

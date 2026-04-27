@@ -1,0 +1,94 @@
+---
+title: "Managing playlists in SDRTrunk: create, load, and back up"
+description: "SDRTrunk stores all channels, aliases, and streaming configurations in a playlist XML file. Learn how to create, load, switch, and back up playlists safely."
+---
+
+The playlist is the central configuration file for SDRTrunk. It stores every channel definition, alias list, and broadcast (streaming) configuration you create in a single XML file. This page explains where the playlist lives, how to open the Playlist Editor, and how to manage multiple playlists.
+
+## What a playlist contains
+
+A playlist is an XML file serialized in the `PlaylistV2` format. It holds four top-level collections:
+
+| Collection | Description |
+|---|---|
+| Channels | Channel definitions — frequency, protocol, source, alias list, and recording settings |
+| Aliases | All aliases across every alias list |
+| Broadcast configurations | Streaming server connections (Icecast, Broadcastify, OpenMHz, etc.) |
+| Channel maps | Logical channel number–to–frequency mapping tables used by some protocols |
+
+Every time you add, edit, or delete any of these items, SDRTrunk schedules an automatic save two seconds after the last change.
+
+## Playlist file location
+
+By default, SDRTrunk stores the playlist file at:
+
+```
+<user home>/SDRTrunk/playlists/playlist.xml
+```
+
+SDRTrunk also maintains a backup copy (`playlist.xml.backup`) in the same directory. If an in-progress save is interrupted — for example, because the application crashed — SDRTrunk detects the `.lock` file it writes during saves and automatically restores from the backup on the next startup.
+
+<Tip>
+Keep an additional manual backup of `playlist.xml` before installing nightly builds. Nightly releases may update the playlist schema in ways that are difficult to reverse.
+</Tip>
+
+## Opening the Playlist Editor
+
+The Playlist Editor is the primary interface for managing all configuration in SDRTrunk.
+
+To open it, go to **View** > **Playlist Editor** in the main menu bar. The editor is organized into tabs for **Channels**, **Aliases**, and **Streaming**.
+
+## Creating a new playlist
+
+<Steps>
+  <Step title="Open the Playlist Editor">
+    Go to **View** > **Playlist Editor**.
+  </Step>
+  <Step title="Choose a new file path">
+    In the Playlist Editor toolbar, click the folder icon or use **File** > **New Playlist**. Navigate to the directory where you want to store the new file and enter a filename ending in `.xml`.
+  </Step>
+  <Step title="Confirm the switch">
+    SDRTrunk saves any pending changes to the current playlist, then loads the empty new playlist. All running channels are stopped before the switch.
+  </Step>
+</Steps>
+
+## Loading an existing playlist
+
+<Steps>
+  <Step title="Open the Playlist Editor">
+    Go to **View** > **Playlist Editor**.
+  </Step>
+  <Step title="Open the playlist file">
+    Click the open folder icon in the toolbar. In the file chooser, navigate to the `.xml` file you want to load.
+  </Step>
+  <Step title="Verify the load">
+    SDRTrunk validates the file by attempting to deserialize it as a `PlaylistV2` document. If the file is not a valid playlist, the load is rejected without affecting your current configuration.
+  </Step>
+</Steps>
+
+## Switching between playlists
+
+SDRTrunk supports one active playlist at a time. Switching playlists:
+
+1. Completes any pending save of the current playlist.
+2. Stops all actively processing channels.
+3. Clears the channel, alias, broadcast, and channel map models.
+4. Loads and transfers data from the new playlist file into those models.
+
+Your previously active playlist remains on disk unchanged so you can switch back at any time.
+
+## Automatic saving
+
+SDRTrunk monitors changes to channels, aliases, broadcast configurations, and channel maps. Whenever a change is detected, it schedules a save task to run two seconds later. Subsequent changes within that two-second window are batched into a single save. You do not need to manually save.
+
+<Note>
+Only standard channels are tracked for auto-save. Traffic channels — temporary channels created by a trunked decoder — are not persisted to the playlist.
+</Note>
+
+## Backup strategy
+
+SDRTrunk creates one automatic backup (`playlist.xml.backup`) before each save. If you want to keep snapshots across sessions, copy the playlist file to a separate location manually. This is especially important before:
+
+- Installing a nightly or pre-release build
+- Making large-scale alias list changes
+- Switching to a new playlist schema version

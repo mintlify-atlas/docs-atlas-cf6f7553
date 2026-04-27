@@ -1,0 +1,128 @@
+---
+title: "Recording audio calls and baseband data in SDRTrunk"
+description: "Configure per-call and baseband audio recording in SDRTrunk, including WAV and MP3 formats, file naming conventions, and enabling recording via aliases."
+---
+
+SDRTrunk can record decoded audio calls and raw signal data to disk. Per-call recording saves each voice call as a separate audio file. Baseband recording captures the raw I/Q or demodulated bitstream data for debugging and protocol replay. This page covers all recording modes, supported formats, how to enable recording, and where recorded files are saved.
+
+## Recording modes
+
+SDRTrunk supports three distinct recording modes, each serving a different purpose:
+
+<CardGroup cols={3}>
+  <Card title="Per-call audio" icon="microphone">
+    Records each decoded voice call to a separate WAV or MP3 file. Triggered by an alias with a Record identifier or by channel-level recording for AM and NBFM channels.
+  </Card>
+  <Card title="Baseband I/Q" icon="wave-sine">
+    Records the raw 16-bit complex in-phase/quadrature samples at the channel sample rate to a WAV file. Used for signal analysis and decoder debugging.
+  </Card>
+  <Card title="Demodulated bitstream" icon="binary">
+    Records the demodulated bit stream at the decoder's baud rate to a `.bits` file. Used for protocol-level replay and debugging.
+  </Card>
+</CardGroup>
+
+## Supported formats
+
+| Format | Extension | Description |
+|---|---|---|
+| WAV (audio) | `.wav` | PCM audio at 8 kHz, used for per-call audio recordings |
+| MP3 | `.mp3` | Compressed audio, used for per-call audio recordings |
+| Baseband I/Q | `.wav` | 16-bit complex I/Q samples; the WAV container is reused for raw samples |
+| Demodulated bitstream | `.bits` | Raw demodulated bit data |
+| MBE CODEC frames | `.mbe` | Encoded vocoder frames from P25 and DMR channels |
+
+You choose between WAV and MP3 for audio call recordings in **User Preferences** > **Recording**.
+
+## Recorder types
+
+The following recorder types are available within channel configuration:
+
+| Recorder type | Description |
+|---|---|
+| Baseband I/Q | Records complex I/Q samples for the primary channel |
+| Traffic channel baseband I/Q | Records complex I/Q samples for each allocated traffic channel |
+| Demodulated bitstream | Records the demodulated bit stream for the primary channel |
+| Traffic channel demodulated bitstream | Records the demodulated bit stream for each allocated traffic channel |
+| MBE CODEC frames | Records the encoded vocoder frames from the primary channel |
+| Traffic channel MBE CODEC frames | Records the encoded vocoder frames for each allocated traffic channel |
+
+<Note>
+The legacy Audio recorder type (8 kHz PCM) is deprecated. Per-call audio recording is now managed exclusively through alias identifiers and channel-level configuration for AM and NBFM.
+</Note>
+
+## Enabling per-call recording via an alias
+
+The most common way to record calls is to add a `Record` identifier to an alias. When a call involves any identifier that matches a recordable alias, SDRTrunk records the complete call audio.
+
+<Steps>
+  <Step title="Open the Playlist Editor">
+    Go to **View** > **Playlist Editor** and select the **Aliases** tab.
+  </Step>
+  <Step title="Select or create an alias">
+    Select the alias for the talkgroup or radio ID you want to record.
+  </Step>
+  <Step title="Add a Record identifier">
+    Click **Add ID** and choose **Record** from the identifier type list. No additional configuration is required — the presence of a Record identifier marks the alias as recordable.
+  </Step>
+  <Step title="Save">
+    SDRTrunk automatically saves the change. The alias is now marked as recordable and all future calls matching it will be recorded.
+  </Step>
+</Steps>
+
+## Enabling baseband or bitstream recording via channel configuration
+
+Baseband and bitstream recorders are configured at the channel level, not via aliases.
+
+<Steps>
+  <Step title="Open the Playlist Editor">
+    Go to **View** > **Playlist Editor** and select the **Channels** tab.
+  </Step>
+  <Step title="Select a channel">
+    Click the channel you want to configure.
+  </Step>
+  <Step title="Enable a recorder">
+    In the channel editor, find the **Recording** section and check the recorder types you want to enable — for example, **Baseband I/Q** or **Demodulated Bitstream**.
+  </Step>
+</Steps>
+
+## Recording directory
+
+SDRTrunk saves all recordings to the directory configured in **User Preferences** > **Directory** > **Recordings**. The default location is:
+
+```
+<user home>/SDRTrunk/recordings/
+```
+
+You can change this path in user preferences at any time. Existing recordings are not moved automatically.
+
+## File naming convention
+
+Audio call recording filenames are constructed from the identifiers active during the call:
+
+```
+<timestamp>_<System>_<Site>_<Channel>_TO_<talkgroup>_FROM_<radio_id>.<extension>
+```
+
+For example:
+
+```
+20240315_143022_Springfield_NorthTower_Control_TO_1234_FROM_5678.mp3
+```
+
+The timestamp uses the format `YYYYMMDD_HHmmss`. Fields that are not present (for example, if no FROM radio ID is decoded) are omitted from the filename.
+
+## Viewing recordings
+
+To browse completed recordings from within SDRTrunk, go to **View** > **Audio Recordings**. This opens the recordings viewer, which lists audio files sorted by timestamp.
+
+To view or replay `.bits` bitstream files, go to **View** > **Message Recording Viewer**. This tool lets you replay a recorded bitstream through the decoder for analysis.
+
+## Storage considerations
+
+Per-call MP3 recordings are significantly smaller than WAV recordings. A typical voice call at the default bitrate produces an MP3 file of roughly 10–30 KB, while the equivalent WAV file is several times larger.
+
+Baseband I/Q recordings consume the most space because they capture the full channel sample stream. For a 12.5 kHz channel, each second of recording is approximately 48 KB (16-bit I/Q at 12,500 samples/second).
+
+<Warning>
+Traffic channel baseband and bitstream recorders create a separate file for every traffic channel grant. On busy trunked systems, this can produce a very large number of files in a short period of time. Enable these recorder types for debugging only.
+</Warning>

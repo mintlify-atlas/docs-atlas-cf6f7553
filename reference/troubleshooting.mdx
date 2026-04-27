@@ -1,0 +1,227 @@
+---
+title: "Troubleshooting hardware, audio, and decoding in SDRTrunk"
+description: "Diagnose and fix hardware detection failures, audio issues, decoding problems, high CPU or memory usage, and application errors in SDRTrunk."
+---
+
+This page covers the most common problems you may encounter with SDRTrunk and explains how to resolve them. Issues are grouped by area. For problems not covered here, generate a diagnostic report (described at the bottom of this page) and open a GitHub issue.
+
+---
+
+## Hardware issues
+
+<AccordionGroup>
+  <Accordion title="No tuner detected">
+    SDRTrunk scans for USB-connected SDR hardware on startup. If no tuner appears in the spectrum display or the tuner list, check the following:
+
+    - **Physical connection** — unplug and reconnect the SDR device, and try a different USB port (preferably USB 3.0 directly on the motherboard, not through a hub).
+    - **Driver not installed** — Windows users must replace the default RTL-SDR driver with a WinUSB-compatible driver using Zadig (see the RTL-SDR entry below). Linux and macOS users may need to install libusb.
+    - **Linux udev rules** — without the correct udev rule, non-root users cannot open the USB device. Create `/etc/udev/rules.d/99-sdrtrunk.rules` containing:
+
+      ```
+      SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", MODE="0666", GROUP="plugdev"
+      ```
+
+      Then reload rules with `sudo udevadm control --reload-rules && sudo udevadm trigger` and reconnect the device. Add your user to the `plugdev` group if necessary.
+    - **Application log** — check the log files (**View > Application Log Files**) for USB error messages that may indicate the exact failure.
+  </Accordion>
+
+  <Accordion title="RTL-SDR not found on Windows">
+    On Windows, RTL-SDR devices ship with a kernel driver that blocks access from user-mode applications. You must replace it with a WinUSB driver using [Zadig](https://zadig.akeo.ie).
+
+    <Steps>
+      <Step title="Download Zadig">
+        Download Zadig from https://zadig.akeo.ie and run it as Administrator.
+      </Step>
+      <Step title="Find your device">
+        Open **Options > List All Devices** and select your RTL-SDR device from the dropdown (it usually appears as "Bulk-In, Interface (Interface 0)").
+      </Step>
+      <Step title="Install WinUSB">
+        Set the driver to **WinUSB** and click **Replace Driver**. Wait for the installation to complete.
+      </Step>
+      <Step title="Restart SDRTrunk">
+        Restart SDRTrunk. The tuner should now be detected.
+      </Step>
+    </Steps>
+
+    <Warning>
+      Replacing the driver with Zadig will prevent the RTL-SDR from working with any software that requires the original kernel driver (such as DVB-T TV applications). You can revert the change through Windows Device Manager.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="SDRPlay not found">
+    SDRPlay receivers require the **SDRPlay API** to be installed separately before SDRTrunk can access them.
+
+    - Download and install the SDRPlay API from the SDRPlay website. SDRTrunk requires a version compatible with its bundled native library.
+    - On Windows, the API installer places the library at `C:\Program Files\SDRplay\API\x64\sdrplay_api.dll`. SDRTrunk adds this path to the library search path automatically on Windows.
+    - On Linux and macOS, ensure the installed library is on the system library path (e.g. `/usr/local/lib`).
+    - If the library loads but no device is detected, confirm the SDRPlay hardware is connected and the API service is running (check the SDRPlay API documentation for platform-specific service start instructions).
+  </Accordion>
+
+  <Accordion title="macOS Tahoe 26.x: application fails to launch">
+    Changes to USB support in macOS Tahoe 26.x prevent SDRTrunk from launching due to a libusb compatibility issue. Use the following workaround:
+
+    <Steps>
+      <Step title="Install the latest libusb HEAD">
+        ```bash
+        brew install libusb --HEAD
+        ```
+      </Step>
+      <Step title="Create the expected library directory">
+        ```bash
+        sudo mkdir -p /opt/local/lib
+        ```
+      </Step>
+      <Step title="Find the installed library path">
+        Locate the libusb dylib installed by Homebrew, for example:
+        `/opt/homebrew/Cellar/libusb/HEAD-9ceaa52/lib/libusb-1.0.0.dylib`
+        (the folder name `HEAD-9ceaa52` varies by install timestamp).
+      </Step>
+      <Step title="Create a symbolic link">
+        ```bash
+        sudo ln -s /opt/homebrew/Cellar/libusb/HEAD-9ceaa52/lib/libusb-1.0.0.dylib \
+            /opt/local/lib/libusb-1.0.0.dylib
+        ```
+      </Step>
+      <Step title="Use the nightly build">
+        Download the nightly build from the SDRTrunk releases page. The nightly includes an updated `usb4java` native library for Tahoe with ARM processors.
+      </Step>
+    </Steps>
+
+    <Note>
+      USB access to SDR tuners on macOS Tahoe may still have issues beyond the launch problem. Check the GitHub issue tracker for the latest status.
+    </Note>
+  </Accordion>
+
+  <Accordion title="USB bandwidth overflow / channel shows OVERFLOW">
+    Each USB controller has a fixed bandwidth shared across all connected devices. When SDRTrunk receives samples faster than the USB bus can sustain, the tuner transitions to an OVERFLOW state and sample data is lost.
+
+    - Move the SDR device to a USB port on a different controller (check Device Manager on Windows or `lsusb -t` on Linux).
+    - Reduce the sample rate in the tuner configuration.
+    - Remove other USB devices from the same controller.
+    - A powered USB hub does not increase bandwidth — bandwidth is set by the host controller.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Audio issues
+
+<AccordionGroup>
+  <Accordion title="No audio playing">
+    - Open **View > User Preferences > Audio Playback** and confirm the correct output device is selected.
+    - Verify the system volume and application volume are not muted.
+    - Check that a channel is actually active and decoding — look for activity in the Now Playing panel.
+    - If using channels configured for digital voice protocols (P25, DMR), audio requires the JMBE library (see below).
+  </Accordion>
+
+  <Accordion title="Digital voice not decoding — no audio for P25, DMR, or NXDN">
+    SDRTrunk decodes the digital framing and error correction for protocols like P25 Phase 1, P25 Phase 2, and DMR, but converting those frames to audio requires the **JMBE** (Java Multi-Band Excitation) codec library, which is distributed separately due to patent considerations.
+
+    - Download the JMBE JAR from the link in the SDRTrunk wiki (the exact URL is listed on the GitHub releases page).
+    - Place the JAR in `~/SDRTrunk/jmbe/` or set the path in **View > User Preferences > Decoder (JMBE Library)**.
+    - Restart SDRTrunk. If the library is found, audio will begin decoding for supported voice protocols.
+
+    <Warning>
+      Encrypted calls cannot be decoded regardless of the JMBE library. SDRTrunk has no capability to decrypt encrypted traffic.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Audio is choppy or dropping out">
+    - **CPU overload** — open the resource status bar at the bottom of the application window and check CPU usage. If it is consistently near 100%, reduce the number of active channels or lower the tuner sample rate.
+    - **Gain too low or too high** — AGC instability or excessive gain can introduce noise that makes voice frames fail to decode cleanly. Adjust the tuner gain settings.
+    - **USB buffer overflow** — see the USB bandwidth section above.
+    - **Vector calibration** — if SIMD calibration has never been run, SDRTrunk may be using slower scalar implementations. Run calibration from **View > User Preferences > Vector Calibration**.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Decoding issues
+
+<AccordionGroup>
+  <Accordion title="Channel shows NO SIGNAL">
+    - Confirm the frequency is correct for the system you are monitoring.
+    - Confirm the protocol (modulation type) set in the channel matches the actual system.
+    - Check the tuner gain — too low and the signal is below the noise floor; too high and the automatic gain control (AGC) may be saturated.
+    - Look at the spectrum display and verify you can see the signal visually.
+  </Accordion>
+
+  <Accordion title="Trunking system is not following calls">
+    For a trunked system to track calls, SDRTrunk must first successfully decode the **control channel**.
+
+    - Verify the control channel frequency is correct.
+    - Confirm the trunking protocol selected in the playlist matches the system (P25 Phase 1, P25 Phase 2, DMR Tier III, etc.).
+    - Check the **Now Playing** and event log panels for decode events — if the control channel is decoding, you should see grant messages and frequency assignments.
+    - If the control channel decodes but traffic channels have no audio, confirm the JMBE library is installed.
+    - Some systems use a system-specific NAC (P25) or Color Code (DMR) — make sure these are either left as any/wildcard or set to the correct value.
+  </Accordion>
+
+  <Accordion title="Calls are encrypted and produce no audio">
+    SDRTrunk cannot decrypt encrypted calls. If a talkgroup is encrypted, the channel will show decode activity (frame sync, etc.) but will not produce audio. This is by design and is not a bug.
+
+    Encrypted channels are typically identified in the event log with an encryption flag. You can assign an alias to mark them as encrypted to avoid confusion.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Performance issues
+
+<AccordionGroup>
+  <Accordion title="High CPU usage">
+    SDRTrunk uses the polyphase channelizer to extract many narrowband channels simultaneously from a wideband SDR capture. Each active channel consumes CPU proportional to its sample rate and the complexity of the decoder.
+
+    - Check the resource status bar for the current CPU reading.
+    - Reduce the number of simultaneously active channels.
+    - Lower the tuner sample rate to reduce the channelizer workload (at the cost of a narrower monitored bandwidth).
+    - Run **Vector Calibration** (**View > User Preferences > Vector Calibration**) so that DSP operations use SIMD instructions where they are faster.
+    - Disable spectrum waterfall rendering if it is consuming GPU/CPU: **View > Disable Spectrum Waterfall**.
+  </Accordion>
+
+  <Accordion title="High memory usage or out-of-memory errors">
+    SDRTrunk runs on the JVM and its maximum heap is set by JVM startup arguments in the release launcher script.
+
+    - The default heap size in the release launchers may not be sufficient for large numbers of simultaneous channels. Edit the launcher script to increase `-Xmx` (e.g. `-Xmx4g` for 4 GB).
+    - Reduce the number of active channels or stop channels you are not actively monitoring.
+    - The resource status bar displays current JVM memory allocation and usage.
+  </Accordion>
+
+  <Accordion title="Buffer overflow errors in logs">
+    Buffer overflow messages typically indicate that the USB bus cannot deliver samples fast enough, or that the processing pipeline is too slow to consume samples as they arrive. See the USB bandwidth section under hardware issues.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Application issues
+
+<AccordionGroup>
+  <Accordion title="How to generate a processing diagnostic report">
+    A processing diagnostic report captures the current state of all active channels, tuners, thread dump, and JVM environment. Attach this report when filing a bug report on GitHub.
+
+    Go to **File > Reports > Processing Diagnostic Report**. A dialog box confirms the file path once the report is written. Reports are saved to the application logs directory (`~/SDRTrunk/logs/`), named with a timestamp and `_sdrtrunk_processing_diagnostic_report.log`.
+
+    SDRTrunk also generates this report automatically when it detects a thread deadlock condition.
+  </Accordion>
+
+  <Accordion title="How to generate a thread dump">
+    A thread dump records the current stack trace for every thread in the JVM at the moment of capture. This is useful for diagnosing hangs or deadlocks.
+
+    Go to **File > Reports > Thread Dump Report**. Reports are saved to the application logs directory with a timestamp and `_sdrtrunk_thread_dump.log` suffix.
+  </Accordion>
+
+  <Accordion title="How to view application log files">
+    Go to **View > Application Log Files**. This opens the application logs directory (`~/SDRTrunk/logs/`) in your system's file manager. Log files are named with a date and use rolling rotation managed by Logback.
+  </Accordion>
+
+  <Accordion title="Nightly build vs release — which should I use?">
+    | Build type | When to use |
+    |---|---|
+    | **Release (alpha/beta/final)** | Day-to-day use. Alpha and beta builds are feature previews that may contain bugs; final releases are stable. |
+    | **Nightly** | When you need the latest bug fix or feature that has not yet been included in a release. The nightly build is updated every time code is committed to the repository, so it reflects the most recent changes. Always back up your playlists before switching to a nightly build. |
+
+    <Warning>
+      Nightly builds may contain regressions or incomplete features. If you experience new problems after switching to a nightly, try reverting to the previous release.
+    </Warning>
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,162 @@
+---
+title: "Building SDRTrunk from source with Gradle and JDK 25"
+description: "Step-by-step guide to cloning, building, and packaging SDRTrunk using Gradle and OpenJDK 25 with JavaFX, including cross-platform release targets."
+---
+
+SDRTrunk uses Gradle for its build system and requires JDK 25 with JavaFX modules. This page covers everything you need to compile and run SDRTrunk from source, create release packages for your platform, and configure an IDE.
+
+## Prerequisites
+
+Before you build, ensure you have the following installed:
+
+- **OpenJDK 25 with JavaFX modules** — the Bellsoft Liberica JDK (Full edition) is recommended because it bundles JavaFX. Standard OpenJDK distributions do not include JavaFX. The build downloads JDKs for cross-platform packaging from `download.bell-sw.com` automatically if they are not already present on disk.
+- **Gradle 8.10+** (optional) — the repository ships with a Gradle wrapper (`gradlew` / `gradlew.bat`), so a standalone Gradle installation is not required.
+
+<Note>
+SDRTrunk uses the [Project Panama Vector API](https://openjdk.org/projects/panama/), which remains in the incubator module (`jdk.incubator.vector`) in JDK 25. All build and run configurations add `--enable-preview` and `--add-modules=jdk.incubator.vector` automatically. You do not need to set these flags manually when using the Gradle tasks.
+</Note>
+
+---
+
+## Clone the repository
+
+```bash
+git clone https://github.com/DSheirer/sdrtrunk.git
+cd sdrtrunk
+```
+
+---
+
+## Build commands
+
+All commands below use the Gradle wrapper. On Windows, replace `./gradlew` with `gradlew.bat`.
+
+### Run the application directly
+
+```bash
+./gradlew run
+```
+
+Compiles and launches SDRTrunk without creating a packaged release. Useful for development and quick testing.
+
+### Run the test suite
+
+```bash
+./gradlew test
+```
+
+Executes the JUnit test suite. Tests are run with the same JVM arguments as the application (including vector API flags).
+
+### Create a release package for your current OS
+
+```bash
+./gradlew runtimeZipCurrent
+```
+
+Detects the current operating system and CPU architecture and produces a self-contained zip release image. The zip is written to `build/image/sdr-trunk.zip`. The extracted image includes a bundled JRE and launcher scripts so end users do not need a separate Java installation.
+
+### Create Linux and macOS release packages
+
+```bash
+./gradlew runtimeZipOthers
+```
+
+Creates release packages for Linux (x86-64 and aarch64) and macOS (x86-64 and aarch64). If the required JDKs are not already present in the expected local paths, Gradle downloads them automatically from the Bellsoft servers during the build.
+
+<Warning>
+You cannot run `runtimeZipOthers` and `runtimeZipWindows` in the same Gradle invocation due to a limitation in the `org.beryx.runtime` plugin. Build Windows and non-Windows targets separately.
+</Warning>
+
+### Create a Windows release package
+
+```bash
+./gradlew runtimeZipWindows
+```
+
+Creates release packages for Windows x86-64 and Windows aarch64. As with `runtimeZipOthers`, missing JDKs are downloaded automatically.
+
+---
+
+## Release artifact locations
+
+All release zip files land in `build/image/`. The zip is always named `sdr-trunk.zip` by the build configuration. The _content_ of the zip is a directory named with the target platform and version, following this pattern:
+
+| Target | Directory name inside zip |
+|---|---|
+| Linux x86-64 | `linux-x86_64-v<version>` |
+| Linux aarch64 | `linux-aarch64-v<version>` |
+| macOS x86-64 | `osx-x86_64-v<version>` |
+| macOS aarch64 | `osx-aarch64-v<version>` |
+| Windows x86-64 | `windows-x86_64-v<version>` |
+| Windows aarch64 | `windows-aarch64-v<version>` |
+
+The current version is defined in `gradle.properties` as `projectVersion`. Nightly builds override this via a Gradle CLI property during the GitHub Actions workflow.
+
+---
+
+## JVM arguments and the Vector API
+
+SDRTrunk requires several JVM flags at runtime. These are already included in the Gradle `run` task and in the launcher scripts embedded in release packages — you do not need to add them manually.
+
+<Tabs>
+  <Tab title="Linux / macOS">
+    ```
+    --add-exports=javafx.base/com.sun.javafx.event=ALL-UNNAMED
+    --add-modules=jdk.incubator.vector
+    --enable-preview
+    --enable-native-access=ALL-UNNAMED
+    --enable-native-access=javafx.graphics
+    --sun-misc-unsafe-memory-access=allow
+    -XX:+UseCompactObjectHeaders
+    ```
+  </Tab>
+  <Tab title="Windows">
+    ```
+    --add-exports=javafx.base/com.sun.javafx.event=ALL-UNNAMED
+    --add-exports=java.desktop/com.sun.java.swing.plaf.windows=ALL-UNNAMED
+    --add-modules=jdk.incubator.vector
+    --enable-preview
+    --enable-native-access=ALL-UNNAMED
+    --enable-native-access=javafx.graphics
+    --sun-misc-unsafe-memory-access=allow
+    -XX:+UseCompactObjectHeaders
+    -Djava.library.path=c:\Program Files\SDRplay\API\x64
+    ```
+    The Windows configuration adds the SDRPlay API library path so that SDRPlay devices are found automatically.
+  </Tab>
+</Tabs>
+
+The `-XX:+UseCompactObjectHeaders` flag is a JDK 25 experimental feature that reduces object header size and improves memory efficiency.
+
+---
+
+## IDE setup
+
+IntelliJ IDEA is the recommended IDE. The repository contains a pre-configured `.idea/` directory.
+
+<Steps>
+  <Step title="Open the project">
+    Open IntelliJ IDEA and choose **Open**, then select the `sdrtrunk/` directory. IntelliJ detects the Gradle build file and imports the project automatically.
+  </Step>
+  <Step title="Configure the JDK">
+    Go to **File > Project Structure > Project** and set the SDK to your JDK 25 (Bellsoft Liberica Full) installation. IntelliJ will prompt you if it cannot find the JDK.
+  </Step>
+  <Step title="Sync Gradle">
+    Click **Reload Gradle Project** in the Gradle tool window to download all dependencies. The build downloads Javadoc and sources for all dependencies, which helps with code navigation.
+  </Step>
+  <Step title="Run the application">
+    Use the Gradle `run` task from the Gradle tool window, or create an IntelliJ run configuration that delegates to Gradle. Running the `main` class directly without the Gradle task will miss the required JVM arguments.
+  </Step>
+</Steps>
+
+---
+
+## Nightly builds via GitHub Actions
+
+The repository's GitHub Actions workflow (`gradle.yml`) runs on every commit and produces nightly release artifacts for all supported platforms. The nightly workflow overrides `projectVersion` with the string `nightly` via a Gradle property flag, producing zip files containing the `nightly` label in the platform directory name.
+
+If you want to replicate the nightly build locally, pass the version override on the command line:
+
+```bash
+./gradlew runtimeZipCurrent -PprojectVersion=nightly
+```

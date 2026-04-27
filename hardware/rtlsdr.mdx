@@ -1,0 +1,174 @@
+---
+title: "RTL-SDR (RTL2832U) setup and driver configuration guide"
+description: "Set up RTL2832U-based USB dongles in SDRTrunk. Covers driver installation on Windows, Linux, and macOS, supported chipsets, and tuner configuration."
+---
+
+RTL-SDR refers to a family of inexpensive USB DVB-T television receiver dongles that were discovered to work as wideband software defined radio receivers. The dongles are built around the **Realtek RTL2832U** USB demodulator chip paired with one of several RF tuner chipsets. SDRTrunk drives these devices directly over USB using the libusb library, bypassing the DVB-T driver entirely.
+
+## Supported chipsets
+
+SDRTrunk identifies the embedded RF tuner chipset at startup and configures it automatically. The following chipsets are supported:
+
+| Tuner type | SDRTrunk identifier | Frequency range |
+|------------|---------------------|-----------------|
+| Elonics E4000 | `ELONICS_E4000` | 52 MHz – 2.2 GHz |
+| Rafael Micro R820T / R820T2 | `RAFAELMICRO_R820T` | ~3.2 MHz – 1.782 GHz |
+| Rafael Micro R828D | `RAFAELMICRO_R828D` | ~3.2 MHz – 1.782 GHz |
+| HydraSDR R828D | `HYDRASDR_R828D` | ~3.2 MHz – 1.782 GHz |
+| Fitipower FC0012 | `FITIPOWER_FC0012` | 22 MHz – 948 MHz |
+| Fitipower FC0013 | `FITIPOWER_FC0013` | 22 MHz – 1.1 GHz |
+
+<Note>
+  The **R820T/R820T2** is the most common chipset found in modern RTL-SDR dongles and provides the widest usable frequency coverage.
+</Note>
+
+The RTL2832U chip also supports a **Bias-T** output on compatible hardware (such as the RTL-SDR Blog V3 and V4 dongles). You can enable the Bias-T in the tuner configuration panel to power an external LNA directly from the dongle's USB power.
+
+## Sample rates
+
+SDRTrunk supports the following RTL-SDR sample rates:
+
+| Rate | Bandwidth |
+|------|-----------|
+| 0.230 MHz | 230,400 samples/s |
+| 0.240 MHz | 240,000 samples/s |
+| 0.256 MHz | 256,000 samples/s |
+| 0.288 MHz | 288,000 samples/s |
+| 0.300 MHz | 300,000 samples/s |
+| 0.960 MHz | 960,000 samples/s |
+| 1.024 MHz | 1,024,000 samples/s |
+| 1.200 MHz | 1,200,000 samples/s |
+| 1.440 MHz | 1,440,000 samples/s |
+| 1.600 MHz | 1,600,000 samples/s |
+| 1.800 MHz | 1,800,000 samples/s |
+| 1.920 MHz | 1,920,000 samples/s |
+| 2.048 MHz | 2,048,000 samples/s |
+| 2.304 MHz | 2,304,000 samples/s |
+| **2.400 MHz** | **2,400,000 samples/s (default)** |
+| 2.560 MHz | 2,560,000 samples/s |
+| 2.880 MHz | 2,880,000 samples/s |
+
+<Warning>
+  Sample rates below 1.0 MHz are subject to aliasing. Use rates of 1.0 MHz or higher for reliable decoding.
+</Warning>
+
+## Driver installation
+
+RTL-SDR devices need a generic USB driver instead of the default DVB-T driver before SDRTrunk can access them.
+
+<Tabs>
+  <Tab title="Windows">
+    Windows automatically installs the DVB-T driver when you plug in an RTL-SDR dongle. You must replace this with the **WinUSB** driver using the Zadig tool.
+
+    <Steps>
+      <Step title="Download Zadig">
+        Download Zadig from [zadig.akeo.ie](https://zadig.akeo.ie). No installation is required — run the executable directly.
+      </Step>
+      <Step title="Plug in your RTL-SDR dongle">
+        Connect the RTL-SDR device to a USB port. Windows may show a driver installation notification — allow it to complete before proceeding.
+      </Step>
+      <Step title="Open Zadig and list all devices">
+        Launch Zadig, then open the **Options** menu and check **List All Devices**.
+      </Step>
+      <Step title="Select your device">
+        In the device dropdown, select your RTL-SDR dongle. The device is usually listed as **Bulk-In, Interface (Interface 0)** or with a name matching the dongle's USB product string (e.g., **RTL2838UHIDIR**).
+      </Step>
+      <Step title="Install WinUSB">
+        Confirm the driver shown in the target driver box is **WinUSB**. Click **Replace Driver** and wait for the installation to finish.
+      </Step>
+      <Step title="Verify in SDRTrunk">
+        Launch SDRTrunk. Your RTL-SDR device should appear in the tuner manager.
+      </Step>
+    </Steps>
+
+    <Warning>
+      Replacing the driver removes the ability to use the dongle as a DVB-T receiver. If you need to restore the original driver, use Device Manager to uninstall the WinUSB driver and allow Windows to reinstall the default driver.
+    </Warning>
+  </Tab>
+  <Tab title="Linux">
+    Linux includes a kernel DVB-T driver for the RTL2832U chip (`dvb_usb_rtl28xxu`) that conflicts with SDRTrunk's libusb access. You must blacklist this module.
+
+    <Steps>
+      <Step title="Create a blacklist file">
+        Create the file `/etc/modprobe.d/blacklist-rtl.conf` with the following content:
+
+        ```text /etc/modprobe.d/blacklist-rtl.conf
+        blacklist dvb_usb_rtl28xxu
+        blacklist rtl2832
+        blacklist rtl2830
+        ```
+      </Step>
+      <Step title="Reload the module configuration">
+        Run the following command to apply the blacklist without rebooting:
+
+        ```bash
+        sudo modprobe -r dvb_usb_rtl28xxu
+        ```
+
+        If the module is in use, you may need to reboot instead.
+      </Step>
+      <Step title="Add a udev rule (optional but recommended)">
+        To allow SDRTrunk to access the device without running as root, create a udev rule:
+
+        ```text /etc/udev/rules.d/20-rtlsdr.rules
+        SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", ATTRS{idProduct}=="2838", GROUP="plugdev", MODE="0664"
+        ```
+
+        Then reload the rules and add your user to the `plugdev` group:
+
+        ```bash
+        sudo udevadm control --reload-rules
+        sudo usermod -aG plugdev $USER
+        ```
+
+        Log out and back in for the group change to take effect.
+      </Step>
+      <Step title="Verify in SDRTrunk">
+        Connect your RTL-SDR device and launch SDRTrunk. It should appear in the tuner manager.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="macOS">
+    macOS does not load a conflicting kernel driver for RTL-SDR devices, so no driver installation is required. SDRTrunk accesses the device directly via libusb.
+
+    <Steps>
+      <Step title="Connect your RTL-SDR device">
+        Plug the RTL-SDR dongle into a USB port.
+      </Step>
+      <Step title="Launch SDRTrunk">
+        Open SDRTrunk. The device should appear automatically in the tuner manager.
+      </Step>
+    </Steps>
+
+    <Note>
+      On Apple Silicon Macs, ensure you are running the Apple Silicon (ARM) build of SDRTrunk. The x86 build running under Rosetta may have issues accessing USB devices.
+    </Note>
+  </Tab>
+</Tabs>
+
+## Configuration in SDRTrunk
+
+Once SDRTrunk detects your RTL-SDR device, open the tuner editor from the **Tuners** tab to configure it.
+
+- **Frequency** — enter the center frequency in MHz. SDRTrunk places channels within the tuner's bandwidth around this center.
+- **Sample rate** — select from the supported rates listed above. 2.400 MHz is the default and a good starting point.
+- **PPM correction** — enter the frequency calibration offset for your specific dongle in parts per million. This corrects the reference oscillator error common in RTL-SDR hardware.
+- **Gain** — the RTL-SDR gain control maps to the embedded tuner's gain steps. Adjust until signals are visible but not clipping.
+- **Bias-T** — enable to supply 4.5 V DC on the antenna connector to power an external LNA (only available on V3/V4 and other Bias-T–capable dongles).
+
+## Common issues
+
+<AccordionGroup>
+  <Accordion title="SDRTrunk cannot find my RTL-SDR device">
+    On Windows, confirm you installed the WinUSB driver with Zadig and selected **Interface 0**. On Linux, confirm the `dvb_usb_rtl28xxu` module is blacklisted and you have udev permissions or are running as root.
+  </Accordion>
+  <Accordion title="Signals are offset from their expected frequency">
+    Your dongle's oscillator is inaccurate. Use a known signal (such as a local FM broadcast station) to measure the frequency error and enter the correction as a PPM value in the tuner configuration. Most cheap dongles need between −50 and +50 ppm of correction.
+  </Accordion>
+  <Accordion title="Audio dropouts or sample overflows">
+    Reduce the sample rate. High sample rates require sustained USB 2.0 bandwidth. Avoid using a USB hub shared with other high-bandwidth devices. If using a laptop, ensure the USB port is not being throttled by power management.
+  </Accordion>
+  <Accordion title="All signals look noisy or weak">
+    Increase gain gradually. If the noise floor rises but signals do not, the antenna connection may be poor. If a very high gain setting causes strong signals to appear distorted or spread across the spectrum, reduce gain to avoid overloading the front end.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,98 @@
+---
+title: "Decoding P25 Phase 1 and Phase 2 systems in SDRTrunk"
+description: "How to configure SDRTrunk to decode P25 Phase 1 and Phase 2 trunked systems, including traffic channel following, audio playback, and encryption behavior."
+---
+
+SDRTrunk supports the APCO Project 25 (P25) digital voice standard in both Phase 1 and Phase 2 variants. P25 is the primary digital radio standard used by public safety agencies in North America — police, fire, and EMS — and is also found in federal, military, and utility systems. This page explains how P25 works, what SDRTrunk decodes, and how to configure a P25 channel.
+
+## Phase 1 vs Phase 2
+
+<Tabs>
+  <Tab title="Phase 1">
+    P25 Phase 1 transmits a single voice or data channel on a 12.5 kHz channel using **C4FM** (4-level FM) modulation at **9,600 bps**. In simulcast environments — where multiple transmitters cover the same frequency — SDRTrunk can also demodulate the **LSM (Linear Simulcast Modulation / CQPSK)** variant.
+
+    The SDRTrunk Phase 1 decoder (`P25P1DecoderC4FM` for normal mode, `P25P1DecoderLSM` for simulcast) performs full TSBK and PDU message decoding, including:
+
+    - Trunk Signaling Block (TSBK) messages for channel grants, unit registrations, and group affiliations
+    - Packet Data Unit (PDU) messages
+    - Network status and neighbor site broadcasts
+    - NAC (Network Access Code) tracking
+
+    **Modulation options in SDRTrunk:**
+    - **Normal (C4FM)** — use for most Phase 1 systems
+    - **Simulcast (LSM)** — use when the system uses simulcast transmitters
+  </Tab>
+  <Tab title="Phase 2">
+    P25 Phase 2 uses **TDMA** (Time Division Multiple Access) to carry two independent voice channels on the same 12.5 kHz channel at **12,000 bps**. Each channel occupies one of two timeslots, doubling system capacity without additional spectrum.
+
+    The SDRTrunk Phase 2 decoder (`P25P2Decoder`) demodulates H-DQPSK and processes MAC (Medium Access Control) messages from both timeslots simultaneously. Phase 2 systems require scramble parameters — SDRTrunk can either auto-detect these or accept them as manual configuration.
+
+    **Key Phase 2 decoder capabilities:**
+    - Simultaneous decoding of timeslot 1 and timeslot 2
+    - Auto-detection of scramble (randomizer) parameters
+    - MAC opcode processing for call grants and system messaging
+  </Tab>
+</Tabs>
+
+## How P25 trunking works
+
+A P25 trunked system operates a dedicated **control channel** that continuously broadcasts system status and call assignments. When a radio requests a call, the controller assigns a **traffic channel** frequency. SDRTrunk monitors the control channel and automatically starts a new decoder on the assigned traffic channel for the duration of the call.
+
+The `P25TrafficChannelManager` handles this process. It:
+
+1. Parses channel grant messages from the control channel
+2. Allocates a decoder from the traffic channel pool for the assigned frequency
+3. Tracks the call event across both the control and traffic channel decoders
+4. Releases the traffic channel decoder when the call ends
+
+<Info>
+  The traffic channel pool size limits how many simultaneous calls SDRTrunk will follow. You can adjust this in the channel configuration to match your computer's processing capacity.
+</Info>
+
+## SDRTrunk P25 features
+
+- **Phase 1 and Phase 2 decoders** — both supported natively, selected by decoder type when configuring a channel
+- **Traffic channel following** — automatic frequency switching to follow active calls
+- **Patch group support** — SDRTrunk tracks patch group identifiers broadcast on the control channel and associates calls with the correct alias
+- **Radio ID aliasing** — P25 is one of the protocols that supports radio ID (unit ID) aliasing in addition to talkgroup aliasing
+- **Bitstream recording** — Phase 1 and Phase 2 decoders can record the raw decoded bitstream
+- **MBE audio frame recording** — P25 audio codec frames can be saved separately from decoded audio
+
+## Setting up a P25 channel
+
+<Steps>
+  <Step title="Find your system's control channel frequency">
+    Look up the P25 system on [RadioReference.com](https://www.radioreference.com) to find the control channel frequency, NAC, and whether the system is Phase 1 or Phase 2.
+  </Step>
+  <Step title="Open the Playlist Editor and create a channel">
+    In SDRTrunk, open **View > Playlist Editor**. Select or create a playlist, then click **Add Channel**.
+  </Step>
+  <Step title="Configure the decoder type">
+    Set the **Decoder** field to **P25 Phase 1** or **P25 Phase 2** depending on your system. For Phase 1, choose **Normal (C4FM)** unless the system is a simulcast site, in which case choose **Simulcast (LSM)**.
+  </Step>
+  <Step title="Set the source frequency">
+    Enter the control channel frequency in the **Frequency** field. SDRTrunk will tune to this frequency and begin monitoring for channel grants.
+  </Step>
+  <Step title="Assign an alias list">
+    Attach an alias list to the channel so talkgroup names and radio IDs appear in the event log and audio panel rather than raw numeric identifiers.
+  </Step>
+  <Step title="Enable the channel">
+    Click **Enable**. SDRTrunk begins decoding. Granted calls appear in the event log and traffic channel decoders start automatically as calls are dispatched.
+  </Step>
+</Steps>
+
+## Audio decoding and JMBE
+
+P25 Phase 1 uses the **IMBE** audio codec. P25 Phase 2 uses **AMBE+**. SDRTrunk cannot decode either codec without the external JMBE library.
+
+<Warning>
+  Without JMBE, SDRTrunk decodes all P25 signaling and metadata — talkgroups, radio IDs, call events — but produces **no audio output**. Download JMBE from the [SDRTrunk releases page](https://github.com/DSheirer/sdrtrunk/releases) and place the JAR file in the same directory as the SDRTrunk application.
+</Warning>
+
+## Encryption
+
+P25 supports several encryption algorithms (DES, AES, RC4, and others) that can be applied per call. SDRTrunk **cannot decrypt encrypted P25 calls**. Encrypted calls are still detected and logged — the event log shows the talkgroup, radio ID, and encryption key ID — but no audio is produced for those calls.
+
+<Note>
+  SDRTrunk displays the encryption key ID embedded in the call grant when present. This can help identify which calls on a system are encrypted and which are not.
+</Note>

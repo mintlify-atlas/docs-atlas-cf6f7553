@@ -1,0 +1,95 @@
+---
+title: "Configuring SDRTrunk channels: frequency and decoder setup"
+description: "Configure channels in SDRTrunk to define which frequency, protocol, and tuner to use, including auto-start, alias assignment, and channel state monitoring."
+---
+
+A channel in SDRTrunk defines a complete decoding setup: which frequency to listen on, which protocol to decode, which tuner to use, and how to handle the resulting audio. This page covers every channel property, how to create a channel in the Playlist Editor, and how to monitor active channels in the Now Playing panel.
+
+## Channel properties
+
+Each channel has the following configurable fields:
+
+| Property | Description |
+|---|---|
+| **Name** | A label for this channel, used in the Now Playing panel and in audio recording filenames |
+| **System** | An optional grouping label for the radio system (e.g. "City of Springfield") |
+| **Site** | An optional sub-grouping label within a system (e.g. "North Tower") |
+| **Protocol / decoder** | The decoding protocol to apply — P25, DMR, MPT-1327, LTR, NBFM, and others |
+| **Source** | The tuner and frequency (or frequencies) to receive |
+| **Alias list** | The alias list to use for identifying talkgroups, radio IDs, and applying actions |
+| **Auto-start** | Whether SDRTrunk starts this channel automatically on application launch |
+| **Auto-start order** | An integer that controls the startup sequence when multiple channels have auto-start enabled |
+
+The combination of System, Site, and Name appears as `SYSTEM_SITE_NAME` in log output and recording filenames.
+
+## Creating a channel
+
+<Steps>
+  <Step title="Open the Playlist Editor">
+    Go to **View** > **Playlist Editor** and select the **Channels** tab.
+  </Step>
+  <Step title="Add a new channel">
+    Click the **+** (Add) button in the channel list toolbar. A new channel entry appears with a default name of "Channel".
+  </Step>
+  <Step title="Set the name, system, and site">
+    In the editor panel on the right, enter values for **Name**, **System**, and **Site** to identify this channel within your playlist.
+  </Step>
+  <Step title="Select the decoder">
+    Choose the protocol from the **Decoder** dropdown. The available configuration options below the dropdown change to match the selected protocol.
+  </Step>
+  <Step title="Configure the source">
+    Under the **Source** section, select the tuner from the **Tuner** dropdown and enter the frequency in hertz. For protocols that support multiple control frequencies, you can add additional frequencies.
+  </Step>
+  <Step title="Assign an alias list">
+    Select an alias list from the **Alias List** dropdown. You must create the alias list first in the **Aliases** tab before it appears here.
+  </Step>
+  <Step title="Enable or disable auto-start">
+    Check **Auto-Start** if you want this channel to start automatically when SDRTrunk launches. Optionally set an **Order** value to control the startup sequence.
+  </Step>
+</Steps>
+
+## Trunked channel configuration
+
+For trunked protocols such as P25 or MPT-1327, you configure a control channel — the channel the trunking system uses to broadcast call assignments. SDRTrunk uses the control channel to follow calls onto traffic channels automatically.
+
+- **Control channel**: Set the frequency to the system's control channel frequency and select the appropriate trunked decoder (e.g. P25 Phase 1, P25 Phase 2, or MPT-1327).
+- **Traffic channels**: SDRTrunk creates and tears down traffic channels dynamically as the trunking control channel grants calls. You do not create traffic channels manually.
+
+<Note>
+Traffic channels are temporary and are not saved to the playlist. Only the control channel configuration is persisted.
+</Note>
+
+## Enabling and disabling channels
+
+To start decoding a channel, right-click it in the channel list and choose **Enable**, or use the toggle in the channel editor. To stop it, select **Disable**. You can also start and stop channels from the **Now Playing** panel.
+
+## Now Playing panel
+
+The **Now Playing** panel (visible in the main SDRTrunk window) shows all currently active channels with their real-time state. Each row displays the channel's system, site, name, current state, and the identifiers (talkgroups, radio IDs) being decoded.
+
+## Channel state indicators
+
+Each active channel reports one of the following states:
+
+| State | Description |
+|---|---|
+| **IDLE** | The channel is active but not currently decoding any messages |
+| **ACTIVE** | Valid messages are being decoded, but no call or data is in progress |
+| **CALL** | A voice call is in progress |
+| **DATA** | Data packets are being decoded |
+| **ENCRYPTED** | Encrypted audio has been detected |
+| **CONTROL** | A trunking control channel is being decoded |
+| **FADE** | Signal has been lost; transitioning toward IDLE or back to an active state |
+| **TEARDOWN** | A traffic channel call has concluded and the channel is being released |
+
+## Auto-starting channels on application launch
+
+When SDRTrunk starts, it loads the playlist and then starts all channels that have **Auto-Start** enabled, in ascending order of their **Auto-Start Order** value. Channels with no order value are started after ordered channels.
+
+<Tip>
+If you run SDRTrunk as a background service, enable auto-start on your control channels so monitoring resumes automatically after a system restart.
+</Tip>
+
+## Preferred tuner selection
+
+If you have multiple SDR devices connected, use the **Tuner** dropdown in the source configuration to pin a channel to a specific device. If the preferred tuner is unavailable when the channel starts, SDRTrunk selects another compatible tuner.

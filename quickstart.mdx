@@ -1,81 +1,149 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
-icon: 'rocket'
+title: 'Quickstart: from SDR hardware to decoded audio in SDRTrunk'
+description: 'Connect your SDR, find a local radio system, configure a channel in the Playlist Editor, and hear decoded audio — from launch to audio in under 10 minutes.'
 ---
 
-## Get started in three steps
-
-Get your documentation site running locally and make your first customization.
-
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+This page walks you through everything you need to go from a freshly installed SDRTrunk to actively decoding audio on your first channel. You will launch the application, confirm your hardware is detected, find a signal in the spectral display, create a channel in the Playlist Editor, and start decoding.
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+You need to know the frequency and protocol of a local radio system before you can configure a channel. [RadioReference.com](https://www.radioreference.com) is the most comprehensive public database of radio system frequencies in North America. Create a free account to search for systems near you.
 </Note>
+
+## Steps
+
+<Steps>
+  <Step title="Launch SDRTrunk and confirm your tuner is detected">
+    Start SDRTrunk using the launcher for your operating system:
+
+    <Tabs>
+      <Tab title="Windows">
+        Open the extracted SDRTrunk folder, navigate to the `bin` directory, and double-click `sdrtrunk.bat`.
+      </Tab>
+      <Tab title="Linux">
+        ```bash
+        ~/sdrtrunk/bin/sdrtrunk
+        ```
+      </Tab>
+      <Tab title="macOS">
+        ```bash
+        ~/sdrtrunk/bin/sdrtrunk
+        ```
+      </Tab>
+    </Tabs>
+
+    When the application opens, the title bar updates to show your tuner's name, for example **SDRTrunk - Generic RTL2832U**. If no tuner name appears, SDRTrunk did not detect your hardware.
+
+    To see all detected tuners, open **View > Tuners** in the menu bar. Each connected and recognized SDR appears in the list. Selecting one makes it the active tuner for the spectral display.
+
+    <Warning>
+      If your tuner is not detected, confirm it is plugged in and that drivers are installed correctly. See the [installation guide](/installation) for per-OS driver instructions.
+    </Warning>
+  </Step>
+
+  <Step title="Open the spectral display and find a signal">
+    The spectral display at the top of the main window shows a live FFT spectrum and waterfall for the active tuner. Signals appear as peaks in the spectrum and bright traces on the waterfall.
+
+    To center the display on a known frequency:
+
+    1. Right-click inside the spectral display.
+    2. Select **Go to frequency** and enter your target frequency in MHz (for example, `460.100`).
+
+    Trunked radio control channels and traffic channels appear as consistent spikes at specific frequencies. A P25 control channel typically shows a stable carrier that does not vary much over time.
+
+    <Tip>
+      You can click directly on any signal in the spectral display to inspect it. SDRTrunk will show decoded frames in the **Now Playing** panel as soon as a matching channel is configured.
+    </Tip>
+  </Step>
+
+  <Step title="Open the Playlist Editor">
+    Open the Playlist Editor using **View > Playlist Editor** in the menu bar.
+
+    The Playlist Editor is where you define all channel configurations, alias lists, and streaming destinations. Your configuration is saved in a playlist file (`.xml`) that SDRTrunk loads automatically on startup.
+  </Step>
+
+  <Step title="Create an alias list">
+    Alias lists let you assign names, colors, and icons to talkgroup IDs and radio IDs so decoded traffic appears with meaningful labels.
+
+    In the Playlist Editor:
+
+    1. Click the **Aliases** tab.
+    2. Click **New Alias List** and give it a descriptive name such as `Local P25 System`.
+    3. Optionally, add individual aliases by clicking **Add Alias**, entering a talkgroup ID or radio ID, and providing a name and color.
+
+    You can add or edit aliases at any time, including while channels are actively decoding.
+  </Step>
+
+  <Step title="Add a channel">
+    In the Playlist Editor:
+
+    1. Click the **Channels** tab.
+    2. Click **New Channel**.
+    3. Enter a descriptive name for the channel, such as `County P25 Control`.
+    4. In the **Source** section, set the **Tuner** to your connected SDR and enter the **Frequency** in Hz (for example, `460100000` for 460.100 MHz).
+    5. In the **Decoder** section, select the protocol that matches your radio system:
+       - Use **APCO-25** for P25 Phase 1 systems
+       - Use **APCO-25 Phase 2** for P25 Phase 2 systems
+       - Use **DMR** for Digital Mobile Radio systems
+       - Use **MPT-1327**, **LTR**, **LTR-Net**, or **Passport** for their respective trunked protocols
+       - Use **NBFM** for standard narrowband FM analog voice
+       - Use **AM** for amplitude modulation voice (such as aircraft)
+    6. In the **Aliases** section, select the alias list you created in the previous step.
+    7. Click **Save** to save the channel configuration.
+
+    <Info>
+      For trunked systems (P25, DMR, MPT-1327, LTR, LTR-Net), configure the channel using the **control channel frequency**. SDRTrunk will automatically follow traffic channels as the system assigns them.
+    </Info>
+  </Step>
+
+  <Step title="Enable the channel and start decoding">
+    In the **Channels** tab of the Playlist Editor, find your new channel in the list. Click the toggle or checkbox in the **Enabled** column to enable it.
+
+    SDRTrunk immediately starts decoding the configured channel. The controller panel in the main window shows active decoding activity, and decoded messages begin appearing in the event log.
+
+    To start decoding automatically every time SDRTrunk launches, right-click the channel and select **Auto-start**. SDRTrunk will present a countdown dialog at startup and then start the channel automatically.
+  </Step>
+
+  <Step title="Listen to audio playback">
+    Decoded audio plays through your system's default audio output device automatically. When a talkgroup becomes active on a trunked system, SDRTrunk routes the audio to your speakers or headphones in real time.
+
+    <Tip>
+      The **Now Playing** panel in the controller panel shows the currently active talkgroup, its alias name (if configured), and a timeline of recent calls. You can toggle the detail tabs in this panel using **View > Show Now Playing Channel Details**.
+    </Tip>
+
+    To review audio after it has played, open **View > Audio Recordings** to browse recorded files in your file manager. SDRTrunk saves recordings to the `SDRTrunk/recordings` directory in your home folder by default.
+  </Step>
+</Steps>
+
+## What to try next
+
+<Columns cols={2}>
+  <Card title="Hardware setup" icon="radio" href="/hardware/overview">
+    Configure tuner settings such as gain, PPM correction, and sample rate for best reception.
+  </Card>
+  <Card title="Alias management" icon="tag" href="/configuration/aliases">
+    Name talkgroups and radio IDs to make decoded traffic easier to monitor.
+  </Card>
+  <Card title="Audio recording" icon="circle-dot" href="/configuration/recording">
+    Configure automatic MP3 or WAV recording by alias, talkgroup, or all traffic.
+  </Card>
+  <Card title="Live streaming" icon="broadcast-tower" href="/configuration/streaming">
+    Stream decoded audio to Broadcastify, Icecast, or other compatible servers.
+  </Card>
+</Columns>
+
+## Common first-run issues
+
+<AccordionGroup>
+  <Accordion title="No audio is playing even though the channel shows decoding activity">
+    Check that your system's default audio output device is not muted and that SDRTrunk's audio output is routed correctly. Open **View > User Preferences** and review the **Playback** settings to confirm the correct output device is selected.
+  </Accordion>
+  <Accordion title="The channel shows no decoding activity at all">
+    Confirm the frequency is correct and that the signal is visible in the spectral display. For trunked systems, verify you are pointed at the control channel rather than a traffic channel. Check that the tuner gain is not set too low — open the tuner configuration and increase gain if the noise floor appears very low.
+  </Accordion>
+  <Accordion title="P25 audio sounds garbled or produces no voice">
+    P25 Phase 2 and some P25 Phase 1 systems use IMBE or AMBE voice codecs that require the JMBE library. Open **View > User Preferences > JMBE Library** and follow the instructions to download and install the JMBE library. Restart SDRTrunk after installing it.
+  </Accordion>
+  <Accordion title="SDRTrunk keeps losing the control channel">
+    Your tuner's frequency reference may need PPM correction. Use a known signal to calibrate: open the tuner configuration from the **View > Tuners** menu, and adjust the **PPM** (parts per million) offset until the signal centers correctly in the spectral display.
+  </Accordion>
+</AccordionGroup>

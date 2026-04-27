@@ -1,0 +1,182 @@
+---
+title: "SDRPlay RSP series setup: install API and configure tuners"
+description: "Set up SDRPlay RSP1, RSP1A, RSP1B, RSP2, RSPduo, and RSPdx receivers in SDRTrunk. Requires the SDRPlay API installed separately before launching."
+---
+
+SDRPlay RSP (Radio Spectrum Processor) devices are high-performance USB SDR receivers covering 100 kHz to 2 GHz. SDRTrunk communicates with RSP devices through the **SDRPlay API** — a native library that SDRPlay distributes separately. You must install the SDRPlay API before SDRTrunk can detect any RSP device.
+
+<Warning>
+  Install the SDRPlay API on your system **before** launching SDRTrunk. If the API library is not present, SDRTrunk will not detect any RSP devices and no RSP tuner options will appear in the tuner manager.
+</Warning>
+
+## Supported models
+
+| Model | SDRTrunk identifier | Notes |
+|-------|---------------------|-------|
+| RSP1 | `RSP_1` | Original RSP model |
+| RSP1A | `RSP_1A` | Improved RSP1 with better filtering |
+| RSP1B | `RSP_1B` | Updated RSP1A |
+| RSP2 | `RSP_2` | Two antenna ports, bias-T, reference clock input |
+| RSPduo Tuner 1 | `RSP_DUO_1` | First tuner of dual-channel RSPduo |
+| RSPduo Tuner 2 | `RSP_DUO_2` | Second tuner of dual-channel RSPduo |
+| RSPdx | `RSP_DX` | Extended frequency range, three antenna ports |
+
+## Frequency range
+
+All RSP devices supported by SDRTrunk cover **100 kHz to 2 GHz** as reported by the controller (`MINIMUM_TUNABLE_FREQUENCY_HZ = 100_000`, `MAXIMUM_TUNABLE_FREQUENCY_HZ = 2_000_000_000`).
+
+## Installing the SDRPlay API
+
+The SDRPlay API is a platform-specific native library (`sdrplay_api`) that SDRTrunk loads at runtime using the Java Foreign Function Interface.
+
+<Tabs>
+  <Tab title="Windows">
+    <Steps>
+      <Step title="Download the SDRPlay API installer">
+        Go to [sdrplay.com/downloads](https://www.sdrplay.com/downloads/) and download the **SDRPlay API** installer for Windows. The minimum supported API version is 3.07.
+      </Step>
+      <Step title="Run the installer">
+        Execute the downloaded installer with administrator privileges. The installer places `sdrplay_api.dll` in the Windows system directory and installs the USB driver for your RSP device.
+      </Step>
+      <Step title="Verify the API service is running">
+        The SDRPlay API runs as a background service (`SDRplayAPIService`). Confirm it is running in Windows Services or Task Manager before launching SDRTrunk.
+      </Step>
+      <Step title="Launch SDRTrunk">
+        Start SDRTrunk. Your RSP device should appear in the tuner manager.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Linux">
+    <Steps>
+      <Step title="Download the SDRPlay API installer">
+        Go to [sdrplay.com/downloads](https://www.sdrplay.com/downloads/) and download the Linux API installer (`.run` file) for your architecture (x86_64 or ARM).
+      </Step>
+      <Step title="Make the installer executable and run it">
+        ```bash
+        chmod +x SDRplay_RSP_API-Linux-3.x.x.run
+        sudo ./SDRplay_RSP_API-Linux-3.x.x.run
+        ```
+
+        The installer places `libsdrplay_api.so` in `/usr/local/lib/` and installs udev rules.
+      </Step>
+      <Step title="Reload udev rules">
+        ```bash
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger
+        ```
+      </Step>
+      <Step title="Verify the API service is running">
+        The SDRPlay API requires a background service (`sdrplay_apiService`). Check its status:
+
+        ```bash
+        sudo systemctl status sdrplay_apiService
+        ```
+
+        Start it if it is not running:
+
+        ```bash
+        sudo systemctl start sdrplay_apiService
+        sudo systemctl enable sdrplay_apiService
+        ```
+      </Step>
+      <Step title="Launch SDRTrunk">
+        Start SDRTrunk. Your RSP device should appear in the tuner manager.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="macOS">
+    <Steps>
+      <Step title="Download the SDRPlay API installer">
+        Go to [sdrplay.com/downloads](https://www.sdrplay.com/downloads/) and download the macOS API installer (`.pkg` file).
+      </Step>
+      <Step title="Run the installer">
+        Open the `.pkg` file and follow the installation prompts. The installer places the `libsdrplay_api.dylib` library in the appropriate system location.
+      </Step>
+      <Step title="Allow the library in Security settings">
+        macOS may block the library the first time it is loaded. If SDRTrunk cannot find the SDRPlay API, open **System Settings → Privacy & Security** and allow the SDRPlay API library to run.
+      </Step>
+      <Step title="Launch SDRTrunk">
+        Open SDRTrunk. Your RSP device should appear in the tuner manager.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Sample rates
+
+SDRPlay RSP devices support a range of effective sample rates achieved through a combination of hardware sample rate and decimation. SDRTrunk configures the base sample rate and decimation factor automatically when you select an effective rate.
+
+### Single-tuner rates (all RSP devices)
+
+| Effective rate | Base rate | Decimation | Usable bandwidth |
+|---------------|-----------|------------|-----------------|
+| 0.250 MHz | 8.0 MHz | ÷32 | ~0.234 MHz |
+| 0.500 MHz | 8.0 MHz | ÷16 | ~0.476 MHz |
+| 1.000 MHz | 8.0 MHz | ÷8 | ~0.900 MHz |
+| 1.500 MHz | 6.0 MHz | ÷4 | ~1.360 MHz |
+| 2.048 MHz | 8.192 MHz | ÷4 | ~1.800 MHz |
+| 3.000 MHz | 6.0 MHz | ÷2 | ~2.700 MHz |
+| 4.000 MHz | 8.0 MHz | ÷2 | ~3.560 MHz |
+| 5.000 MHz | 5.0 MHz | ÷1 | ~4.120 MHz |
+| 6.000 MHz | 6.0 MHz | ÷1 | ~5.200 MHz |
+| 7.000 MHz | 7.0 MHz | ÷1 | ~5.960 MHz |
+| **8.000 MHz** | **8.0 MHz** | **÷1** | **~6.940 MHz (default)** |
+| 9.000 MHz | 9.0 MHz | ÷1 | ~7.380 MHz |
+| 10.000 MHz | 10.0 MHz | ÷1 | ~8.500 MHz |
+
+### RSPduo dual-tuner rates
+
+When using the RSPduo with both Tuner 1 and Tuner 2 simultaneously, the available sample rates are limited. The hardware applies an inherent ÷4 decimation on top of the selected decimation:
+
+| Effective rate | Base rate | Usable bandwidth |
+|---------------|-----------|-----------------|
+| 0.500 MHz | 8.0 MHz | ~0.450 MHz |
+| 1.000 MHz | 8.0 MHz | ~0.950 MHz |
+| 1.500 MHz | 6.0 MHz | ~1.500 MHz |
+| 2.000 MHz | 8.0 MHz | ~2.000 MHz |
+
+<Note>
+  The RSPduo in dual-tuner mode has a maximum effective output rate of 2 MHz per tuner, with the hardware performing the majority of the decimation.
+</Note>
+
+## Configuration in SDRTrunk
+
+Open the tuner editor from the **Tuners** tab after your RSP device is detected.
+
+### Gain controls
+
+RSP devices use a two-parameter gain model:
+
+| Parameter | Description |
+|-----------|-------------|
+| **LNA state** | Selects the RF LNA gain reduction level. Lower LNA state numbers correspond to more gain (less reduction). The available LNA states vary by device model. |
+| **Baseband gain reduction (IF gain reduction)** | Controls the IF amplifier gain reduction in dB. Increasing this value reduces IF gain. Valid range is typically 20–59 dB depending on band. |
+
+<Tip>
+  A lower LNA state (e.g., 0 or 1) provides more front-end amplification. Increase the baseband gain reduction if strong signals cause overloading.
+</Tip>
+
+### RSPduo dual-tuner operation
+
+The RSPduo appears as two separate tuner entries in SDRTrunk — **RSPduo Tuner 1** and **RSPduo Tuner 2**. You can add both to your playlist and configure each independently to monitor two different frequency bands simultaneously.
+
+<Warning>
+  Both tuners of the RSPduo share a single reference clock. Their sample rates are linked — both must be set to a dual-tuner mode sample rate (0.5, 1.0, 1.5, or 2.0 MHz effective rate). You cannot mix single-tuner and dual-tuner sample rates across the two tuner entries.
+</Warning>
+
+## Common issues
+
+<AccordionGroup>
+  <Accordion title="No RSP devices appear in SDRTrunk">
+    The SDRPlay API library was not found. Verify the API is installed and the background service (`SDRplayAPIService` on Windows, `sdrplay_apiService` on Linux) is running. On Linux, also check that udev rules are in place and your user has permission to access the USB device.
+  </Accordion>
+  <Accordion title="SDRTrunk reports an incompatible API version">
+    SDRTrunk requires SDRPlay API version 3.07 or later. Download and install the latest API from sdrplay.com. Multiple API versions can conflict if an old version was previously installed.
+  </Accordion>
+  <Accordion title="RSPduo only shows one tuner">
+    The RSPduo must be operated in dual-tuner mode for both tuner entries to appear. If another application has claimed the device in single-tuner mode, SDRTrunk may only be able to access one tuner. Close other SDRPlay software before launching SDRTrunk.
+  </Accordion>
+  <Accordion title="Strong signals cause gain reduction or overloading">
+    The RSP API monitors for power overload events and SDRTrunk acknowledges them automatically. If you experience frequent overloads, increase the baseband gain reduction value or select a higher LNA state number to reduce front-end gain.
+  </Accordion>
+</AccordionGroup>

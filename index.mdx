@@ -1,133 +1,65 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
-icon: 'star'
+title: "SDRTrunk: Trunked Radio Decoding with SDR"
+description: "SDRTrunk is a cross-platform Java application for decoding, monitoring, recording, and streaming trunked mobile radio protocols using Software Defined Radios."
 ---
 
-## Setting up
+SDRTrunk turns your Software Defined Radio (SDR) hardware into a powerful trunked radio monitoring station. Connect an RTL-SDR, HackRF, Airspy, or SDRPlay device and start decoding P25, DMR, MPT-1327, LTR, and other trunked radio protocols in real time — complete with audio playback, recording, and live streaming to Broadcastify or Icecast.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Download and install SDRTrunk on Windows, Linux, or macOS
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Connect your SDR and start monitoring radio channels in minutes
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Supported Hardware" icon="microchip" href="/hardware/overview">
+    RTL-SDR, HackRF, Airspy, SDRPlay, and Funcube Dongle
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Supported Protocols" icon="radio" href="/protocols/overview">
+    P25 Phase 1 and 2, DMR, MPT-1327, LTR, LTR-Net, and more
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## What SDRTrunk does
 
-Everything you need to create world-class documentation.
+SDRTrunk monitors trunked radio systems — the kind used by public safety agencies, utilities, and businesses. When a call goes out, the radio system dynamically assigns it to a free frequency (a "trunk"). SDRTrunk follows these calls across frequencies automatically, so you hear complete conversations rather than fragments.
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+<CardGroup cols={3}>
+  <Card title="Decode" icon="wave-sine">
+    Simultaneously decode multiple channels from a single SDR tuner using the polyphase channelizer
   </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
+  <Card title="Record" icon="circle-dot">
+    Save audio calls as WAV or MP3 files, organized by channel and timestamp
   </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
+  <Card title="Stream" icon="tower-broadcast">
+    Live-stream audio to Broadcastify, Icecast, OpenMHz, RdioScanner, or Shoutcast
   </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+</CardGroup>
 
-## Make your content agent ready
+## Get started in 3 steps
 
-Make your docs work for humans and AI agents alike.
+<Steps>
+  <Step title="Download and install">
+    Grab the latest release for your operating system from the [releases page](https://github.com/DSheirer/sdrtrunk/releases). SDRTrunk bundles its own Java runtime — no separate installation needed.
+  </Step>
+  <Step title="Connect your SDR hardware">
+    Plug in your RTL-SDR, HackRF, Airspy, or SDRPlay device. SDRTrunk auto-detects supported hardware on startup. See the [hardware guide](/hardware/overview) for driver requirements.
+  </Step>
+  <Step title="Configure a channel and start decoding">
+    Open the Playlist Editor, create an alias list, add a channel with the correct frequency and protocol, and click **Enable**. The spectral display shows your signal and audio begins playing immediately.
+  </Step>
+</Steps>
 
-<Columns cols={2}>
-  <Card
-    title="Prompt component"
-    icon="robot"
-    href="/agent-ready/prompt"
-  >
-    Embed shareable AI prompts readers can copy or open in Cursor.
-  </Card>
-  <Card
-    title="Visibility"
-    icon="eye"
-    href="/agent-ready/visibility"
-  >
-    Show different content to humans and agents reading your docs.
-  </Card>
-  <Card
-    title="Contextual menu"
-    icon="bolt"
-    href="/agent-ready/contextual"
-  >
-    Give readers one-click access to Claude, ChatGPT, Cursor, and more.
-  </Card>
-  <Card
-    title="AI coding tools"
-    icon="wand-magic-sparkles"
-    href="/ai-tools/claude-code"
-  >
-    Set up Claude Code, Cursor, or Windsurf with Mintlify's skill.
-  </Card>
-</Columns>
+## Key features
 
-## Need inspiration?
+- **Multi-protocol decoding** — P25 Phase 1 and 2, DMR, MPT-1327, LTR, LTR-Net, NBFM, MDC-1200, Fleetsync, and more
+- **Polyphase channelizer** — decode dozens of channels simultaneously from one tuner
+- **Real-time spectral display** — waterfall and spectrum view with zoom and pan
+- **Alias management** — assign names, colors, and actions to talkgroups and radio IDs
+- **Audio streaming** — broadcast live to Broadcastify, Icecast, OpenMHz, and Shoutcast
+- **Cross-platform** — runs on Windows, Linux, and macOS (including Apple Silicon)
+- **Headless mode** — run without a GUI for server or embedded deployments
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<Note>
+  SDRTrunk is free, open-source software licensed under GPL-3.0. Source code is available at [github.com/DSheirer/sdrtrunk](https://github.com/DSheirer/sdrtrunk).
+</Note>

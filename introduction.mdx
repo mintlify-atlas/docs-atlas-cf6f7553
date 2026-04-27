@@ -1,0 +1,94 @@
+---
+title: 'SDRTrunk: decode and monitor trunked radio systems'
+description: 'Learn what SDRTrunk is, which radio protocols and SDR hardware it supports, and what you can do with it before you install anything.'
+---
+
+SDRTrunk is a cross-platform Java application for decoding, monitoring, recording, and streaming trunked mobile and related radio protocols using Software Defined Radio (SDR) hardware. It runs on 64-bit Windows, Linux, and macOS, and bundles its own Java runtime so you do not need to install a JDK separately.
+
+## What you can do with SDRTrunk
+
+SDRTrunk is used by radio enthusiasts, amateur radio operators, and researchers to receive and decode digital and analog radio traffic in real time. Common use cases include:
+
+- **Public safety monitoring** — follow P25 trunked systems used by police, fire, and EMS agencies
+- **Amateur radio** — decode DMR repeaters and simplex channels
+- **Research and education** — capture and analyze radio protocol data for study or development
+
+## Supported protocols
+
+SDRTrunk can decode the following protocols:
+
+| Protocol | Description |
+|---|---|
+| APCO-25 Phase 1 | Digital trunked radio used widely by public safety (P25) |
+| APCO-25 Phase 2 | TDMA variant of P25 with higher spectral efficiency |
+| DMR | Digital Mobile Radio, used in commercial and amateur radio |
+| MPT-1327 | Analog trunked radio protocol used in many countries |
+| LTR | Logic Trunked Radio, a simple analog trunked protocol |
+| LTR-Net | Networked variant of LTR |
+| NBFM | Narrowband FM analog voice |
+| MDC-1200 | Motorola signaling protocol over analog FM |
+| Fleetsync | Kenwood fleet management signaling |
+| Passport | EF Johnson trunked radio protocol |
+| AM | Amplitude modulation (aircraft and other AM voice) |
+
+## Supported SDR hardware
+
+SDRTrunk supports a range of USB-connected SDR devices and sound-card-based tuners:
+
+<CardGroup cols={2}>
+  <Card title="RTL-SDR (RTL2832U)" icon="radio">
+    Chipsets include R820T, R828D, E4000, FC0012, FC0013, and FC2580. The most affordable and widely available option.
+  </Card>
+  <Card title="HackRF One" icon="microchip">
+    Wideband transceiver from Great Scott Gadgets. Also supports Jawbreaker and RAD1O variants.
+  </Card>
+  <Card title="Airspy" icon="signal">
+    Airspy R820T and Airspy Mini for high-dynamic-range reception across VHF and UHF bands.
+  </Card>
+  <Card title="SDRplay RSP series" icon="wave-square">
+    RSP1, RSP1A, RSP1B, RSP2, RSPduo (both tuners), and RSPdx. Requires the SDRplay API to be installed separately.
+  </Card>
+  <Card title="Funcube Dongle" icon="usb">
+    Funcube Dongle Pro and Pro Plus, connected as sound card devices.
+  </Card>
+  <Card title="Recording playback" icon="play">
+    Replay previously captured IQ recordings as a virtual tuner for testing and analysis.
+  </Card>
+</CardGroup>
+
+## Key capabilities
+
+**Polyphase channelizer** — SDRTrunk uses a polyphase channelizer to extract many channels simultaneously from a single wideband IQ stream. One RTL-SDR can cover an entire trunked system band and decode multiple active channels at once.
+
+**Real-time spectral display** — the main window shows a live FFT spectrum and scrolling waterfall for the active tuner. You can click a signal in the spectrum to inspect it directly.
+
+**Alias management** — assign names, colors, and icons to talkgroup IDs and radio IDs so decoded traffic appears with human-readable labels instead of raw numbers.
+
+**Audio recording** — automatically record decoded audio to MP3 or WAV files, organized by date and alias.
+
+**Live streaming** — stream audio to Broadcastify, Icecast, and other streaming servers using the built-in audio streaming manager.
+
+**Playlist editor** — all channel configurations, aliases, and streaming destinations are stored in a playlist file that you can save, reload, and share.
+
+## System requirements
+
+| Component | Minimum | Recommended |
+|---|---|---|
+| Operating system | Windows 64-bit, Linux 64-bit, macOS 12.x (64-bit) | Latest stable release of each OS |
+| CPU | 4-core | 4-core or more |
+| RAM | 4 GB (may be sufficient for light use) | 8 GB or more |
+
+<Note>
+SDRTrunk is licensed under the GNU General Public License v3.0 (GPL-3.0). Source code is available at [github.com/DSheirer/sdrtrunk](https://github.com/DSheirer/sdrtrunk).
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Download SDRTrunk and install it on Windows, Linux, or macOS.
+  </Card>
+  <Card title="Quickstart" icon="bolt" href="/quickstart">
+    Connect your SDR, configure a channel, and start decoding audio in minutes.
+  </Card>
+</CardGroup>

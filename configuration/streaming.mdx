@@ -1,0 +1,170 @@
+---
+title: "Streaming decoded audio to Broadcastify, Icecast, and more"
+description: "Stream decoded audio from SDRTrunk to Broadcastify, Icecast, OpenMHz, RdioScanner, or Shoutcast by configuring broadcast servers and assigning them to aliases."
+---
+
+SDRTrunk can send decoded audio calls to remote broadcast servers in real time. When a call is decoded and the matching alias is configured for streaming, SDRTrunk encodes the audio as MP3 and delivers it to one or more configured servers. This page covers every supported server type, how to set up a broadcast configuration, how to assign it to an alias, and how to monitor connection status.
+
+## Supported broadcast server types
+
+SDRTrunk supports the following streaming and call-upload services:
+
+<CardGroup cols={2}>
+  <Card title="Broadcastify Feed" icon="tower-broadcast">
+    Live audio stream to Broadcastify via an Icecast-compatible TCP connection. Requires a Broadcastify feed ID, hostname, mount point, and password.
+  </Card>
+  <Card title="Broadcastify Calls" icon="phone">
+    Completed-call push to the Broadcastify Calls API. Sends each recorded call after it ends. Requires an API key and system ID.
+  </Card>
+  <Card title="Icecast 2 (v2.4+)" icon="radio">
+    HTTP-based connection to Icecast 2.4 and later. Requires a host, port, mount point, and password.
+  </Card>
+  <Card title="Icecast (v2.3)" icon="radio">
+    TCP-based (SOURCE command) connection to Icecast 2.3. Requires a host, port, and mount point.
+  </Card>
+  <Card title="OpenMHz" icon="globe">
+    Completed-call push to OpenMHz.com. Requires a system name and API key.
+  </Card>
+  <Card title="Rdio Scanner" icon="headphones">
+    Completed-call push to a Rdio Scanner server. Requires the server URL and an API key.
+  </Card>
+  <Card title="Shoutcast v1" icon="music">
+    Stream to a Shoutcast 1.x server. Requires a host, port, and password.
+  </Card>
+  <Card title="Shoutcast v2" icon="music">
+    Stream to a Shoutcast 2.x server. Requires a host, port, and password.
+  </Card>
+</CardGroup>
+
+<Note>
+Broadcastify Calls, OpenMHz, and Rdio Scanner are not live audio streams — they are call-upload services. SDRTrunk pushes a completed MP3 recording to the server's API after each call ends, rather than maintaining an open audio stream.
+</Note>
+
+## Broadcast format
+
+All audio delivered by SDRTrunk to streaming and call-upload servers is encoded as **MP3**. The audio format setting in a broadcast configuration is fixed to MP3 and cannot be changed to another format.
+
+## Setting up a broadcast configuration
+
+<Steps>
+  <Step title="Open the Playlist Editor">
+    Go to **View** > **Playlist Editor** and select the **Streaming** tab.
+  </Step>
+  <Step title="Add a new broadcast configuration">
+    Click the **+** (Add) button. Choose the server type from the dropdown (for example, **Icecast 2 (v2.4+)** or **Broadcastify Call**).
+  </Step>
+  <Step title="Enter a name">
+    Give the configuration a name that identifies it within SDRTrunk (for example, "City Fire Icecast" or "County P25 Broadcastify"). This name is what you reference when assigning the stream to an alias.
+  </Step>
+  <Step title="Enter server credentials">
+    Fill in the server-specific fields. See the [server-specific configuration](#server-specific-configuration) section below for details on each type.
+  </Step>
+  <Step title="Enable the configuration">
+    Check **Enabled** to allow SDRTrunk to connect to this server. Connections are established automatically when a matching alias triggers streaming.
+  </Step>
+</Steps>
+
+## Server-specific configuration
+
+<Tabs>
+  <Tab title="Broadcastify Feed">
+    Broadcastify feeds use an Icecast TCP connection with specific audio settings (16 kbps MP3, mono, 8000 Hz).
+
+    | Field | Description |
+    |---|---|
+    | **Name** | Display name within SDRTrunk |
+    | **Host** | Broadcastify relay server hostname (provided by Broadcastify) |
+    | **Port** | Server port number |
+    | **Mount point** | Mount point path (provided by Broadcastify) |
+    | **Password** | Feed password (provided by Broadcastify) |
+    | **Feed ID** | Numeric Broadcastify feed ID |
+  </Tab>
+  <Tab title="Broadcastify Calls">
+    Broadcastify Calls pushes each completed call recording to the Broadcastify API endpoint.
+
+    | Field | Description |
+    |---|---|
+    | **Name** | Display name within SDRTrunk |
+    | **API Key** | Your Broadcastify Calls API key |
+    | **System ID** | The Broadcastify system ID assigned to your feed |
+    | **Delay** | Milliseconds to wait after a call ends before uploading |
+  </Tab>
+  <Tab title="Icecast 2 (v2.4+)">
+    Uses an HTTP PUT connection compatible with Icecast 2.4 and later.
+
+    | Field | Description |
+    |---|---|
+    | **Name** | Display name within SDRTrunk |
+    | **Host** | Icecast server hostname or IP address |
+    | **Port** | Icecast server port (default 8000) |
+    | **Mount point** | Stream mount point (e.g. `/fire.mp3`) |
+    | **Password** | Source password |
+    | **Username** | Source username (optional, defaults to `source`) |
+  </Tab>
+  <Tab title="OpenMHz">
+    Pushes completed calls to the OpenMHz.com API.
+
+    | Field | Description |
+    |---|---|
+    | **Name** | Display name within SDRTrunk |
+    | **System name** | Your system name as registered on OpenMHz.com |
+    | **API Key** | Your OpenMHz API key |
+  </Tab>
+  <Tab title="Shoutcast v1 / v2">
+    Streams live audio to a Shoutcast server.
+
+    | Field | Description |
+    |---|---|
+    | **Name** | Display name within SDRTrunk |
+    | **Host** | Shoutcast server hostname or IP address |
+    | **Port** | Shoutcast server port |
+    | **Password** | Stream password |
+  </Tab>
+</Tabs>
+
+## Assigning a stream to an alias
+
+Once a broadcast configuration exists, you attach it to aliases using a **Broadcast Channel** identifier. SDRTrunk streams audio for any call that matches a streamable alias.
+
+<Steps>
+  <Step title="Open the alias you want to stream">
+    Go to **View** > **Playlist Editor** > **Aliases** tab and select the alias.
+  </Step>
+  <Step title="Add a Broadcast Channel identifier">
+    Click **Add ID** and choose **Audio Broadcast Channel** from the identifier type list.
+  </Step>
+  <Step title="Select the broadcast configuration">
+    In the field that appears, choose the name of the broadcast configuration you created. You can add multiple Broadcast Channel identifiers to stream to several servers simultaneously.
+  </Step>
+</Steps>
+
+## Delay configuration
+
+Each broadcast configuration has a **Delay** setting (in milliseconds). For live streams, delay introduces a buffer between when the call starts and when audio is pushed to the server. For call-upload services, delay controls how long SDRTrunk waits after the call ends before uploading the file.
+
+The default delay is 0 ms. Increase the delay if your broadcast service requires a minimum time gap between calls.
+
+## Maximum recording age
+
+Each broadcast configuration also has a **Maximum Recording Age** setting (default: 10 minutes). If a completed call has been waiting in the upload queue longer than this threshold (plus the configured delay), SDRTrunk discards it without uploading. This prevents old calls from being sent after connectivity is restored following a long disconnection.
+
+## Monitoring connection status
+
+To check the connection state of your broadcast configurations, go to **View** > **Show Streaming Status** in the main menu. This panel lists each configuration with its current connection status.
+
+## Troubleshooting stream disconnections
+
+<AccordionGroup>
+  <Accordion title="The stream connects but immediately disconnects">
+    Verify the host, port, mount point, and password are correct. For Icecast HTTP (v2.4+), ensure the server is running Icecast 2.4 or later and not an older 2.3.x version, which requires the TCP configuration instead.
+  </Accordion>
+  <Accordion title="Audio uploads succeed but are rejected by the API">
+    For Broadcastify Calls and OpenMHz, confirm that the system ID or system name matches exactly what your account shows on the service's website. API keys are case-sensitive.
+  </Accordion>
+  <Accordion title="The configuration shows as enabled but never connects">
+    A configuration will not connect until a call matches an alias that has a Broadcast Channel identifier pointing to that configuration. Verify that the alias list is assigned to an active channel and that the Broadcast Channel identifier name matches the broadcast configuration name exactly.
+  </Accordion>
+  <Accordion title="Old calls are not being uploaded after a reconnection">
+    Calls that exceeded the Maximum Recording Age while the server was unreachable are discarded. Lower the maximum recording age to reduce the discard window, or increase it if you expect longer outages.
+  </Accordion>
+</AccordionGroup>

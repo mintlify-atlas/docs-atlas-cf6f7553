@@ -1,0 +1,71 @@
+---
+title: "Decoding MPT-1327 analog trunked radio in SDRTrunk"
+description: "Set up SDRTrunk to decode MPT-1327 trunked radio systems. Covers sync modes, channel map creation, traffic channel following, and call timeout settings."
+---
+
+SDRTrunk supports **MPT-1327**, a widely deployed analog trunked radio standard developed in the United Kingdom in the 1980s and standardized by the UK's Ministry of Posts and Telecommunications. MPT-1327 systems are found across Europe, Asia-Pacific, South America, and other regions where analog trunking predated digital standards. This page covers how MPT-1327 trunking works and how to configure SDRTrunk to decode it.
+
+## How MPT-1327 trunking works
+
+An MPT-1327 system dedicates one frequency to a **control channel**, which continuously broadcasts system information and call assignments at **1,200 bps** using Audio Frequency Shift Keying (AFSK). When a radio requests a call, the control channel responds with a channel grant directing both parties to a specific **traffic channel** frequency. Radios tune to that frequency for the duration of the call, then return to monitor the control channel.
+
+The SDRTrunk `MPT1327Decoder` demodulates the AFSK signal using a 1,200 Hz decoder and runs parallel message framers — one tuned to the control channel sync pattern and one tuned to the traffic channel sync pattern — so the decoder handles both types of messages without reconfiguration.
+
+The `MPT1327TrafficChannelManager` listens for channel grant messages and allocates a new decoder for each granted traffic frequency.
+
+## Sync modes
+
+MPT-1327 defines two sync word variants. SDRTrunk exposes both as a **Sync** setting in the channel configuration:
+
+| Sync mode | When to use |
+|---|---|
+| **Normal** | Standard MPT-1327 sync pattern — used by most systems worldwide |
+| **French** | Alternate sync pattern used by some French deployments |
+
+Select the correct sync mode for your system. Using the wrong mode means the decoder will not frame messages correctly, even when the signal is strong.
+
+## Configuration options
+
+The `DecodeConfigMPT1327` class exposes the following settings:
+
+| Option | Default | Description |
+|---|---|---|
+| Sync | Normal | Control and traffic channel sync pattern variant |
+| Channel map name | — | Name of the channel map that maps logical channel numbers to frequencies |
+| Call timeout (seconds) | System default (1–180 s) | How long SDRTrunk holds a traffic channel decoder open after the last activity before releasing it |
+| Traffic channel pool size | System default | Maximum number of simultaneous traffic channel decoders |
+| Channel rotation delay | 500 ms (200–2,000 ms) | Minimum time between traffic channel allocations during busy periods |
+
+<Info>
+  The channel map is required for traffic channel following. Without it, SDRTrunk decodes control channel messaging but cannot tune to granted traffic channels because it has no way to translate logical channel numbers to frequencies. Create a channel map in the Playlist Editor before enabling the channel.
+</Info>
+
+## Setting up an MPT-1327 channel
+
+<Steps>
+  <Step title="Find the control channel frequency">
+    Look up the MPT-1327 system on [RadioReference.com](https://www.radioreference.com) or a local frequency database to find the control channel frequency and the list of traffic channel frequencies.
+  </Step>
+  <Step title="Create a channel map">
+    In the SDRTrunk **Playlist Editor**, open the **Channel Maps** section and create a new channel map. Enter each logical channel number and its corresponding frequency. The control channel is typically channel 0 or a designated system channel.
+  </Step>
+  <Step title="Add a channel and select MPT1327 decoder">
+    In the Playlist Editor, add a new channel. Set the **Decoder** to **MPT1327**.
+  </Step>
+  <Step title="Set the control channel frequency">
+    Enter the control channel frequency in the **Frequency** field.
+  </Step>
+  <Step title="Assign the channel map and sync mode">
+    In the decoder configuration, select the channel map you created and set the **Sync** mode to **Normal** or **French** as appropriate for your system.
+  </Step>
+  <Step title="Configure call timeout and pool size">
+    Adjust the call timeout and traffic channel pool size to suit the activity level of the system and your hardware.
+  </Step>
+  <Step title="Assign an alias list and enable">
+    Attach an alias list so talkgroup identifiers resolve to names. Click **Enable** to begin decoding.
+  </Step>
+</Steps>
+
+## Identifier aliasing
+
+MPT-1327 uses numeric identifiers for both individual radios (SSI — Short Subscriber Identity) and groups. SDRTrunk maps these identifiers to aliases via the alias list attached to the channel. Talkgroup aliasing is supported for MPT-1327, allowing you to assign names and colors to group identifiers visible in the event log.

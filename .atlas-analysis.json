@@ -1,0 +1,87 @@
+{
+  "projectType": "saas",
+  "projectName": "SDRTrunk",
+  "projectDescription": "A cross-platform Java desktop application for decoding, monitoring, recording, and streaming trunked mobile radio protocols using Software Defined Radios (SDR).",
+  "theme": "maple",
+  "primaryColor": "#2563EB",
+  "lightColor": "#EFF6FF",
+  "darkColor": "#1E3A8A",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "User Guide",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "SDR Hardware",
+            "pages": [
+              "hardware/overview",
+              "hardware/rtlsdr",
+              "hardware/hackrf",
+              "hardware/airspy",
+              "hardware/sdrplay"
+            ]
+          },
+          {
+            "group": "Decoding Protocols",
+            "pages": [
+              "protocols/overview",
+              "protocols/p25",
+              "protocols/dmr",
+              "protocols/mpt1327",
+              "protocols/ltr"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/playlist",
+              "configuration/channels",
+              "configuration/aliases",
+              "configuration/recording",
+              "configuration/streaming"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/user-preferences",
+              "reference/troubleshooting",
+              "reference/building-from-source"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Multi-protocol trunked radio decoding (P25, DMR, MPT-1327, LTR, LTR-Net)",
+    "Support for popular SDR hardware (RTL-SDR, HackRF, Airspy, SDRPlay RSP series)",
+    "Real-time spectral display and waterfall visualization",
+    "Audio recording in WAV and MP3 formats",
+    "Live audio streaming to Broadcastify, Icecast, OpenMHz, and Shoutcast",
+    "Alias management for talkgroups, radio IDs, and identifiers",
+    "Playlist-based channel and alias configuration",
+    "Polyphase channelizer for simultaneous multi-channel decoding",
+    "Cross-platform support (Windows, Linux, macOS)",
+    "Headless (no-GUI) operation mode"
+  ],
+  "publicApiSurface": [
+    "Protocol enum: AM, APCO25, APCO25_PHASE2, DMR, MPT1327, LTR, LTR_NET, DMR, NBFM, MDC1200, PASSPORT",
+    "TunerType enum: RTL2832 (E4000, R820T), HackRF ONE/Jawbreaker, Airspy R820T/HF+, SDRPlay RSP1/1A/1B/2/Duo/Dx",
+    "BroadcastServerType: Broadcastify, Icecast, OpenMHz, RdioScanner, Shoutcast",
+    "RecordFormat: WAV, MP3, BITS (baseband bitstream)",
+    "PlaylistManager: manages channels, aliases, and broadcast configurations",
+    "TunerManager: discovers and controls SDR hardware tuners",
+    "AudioStreamingManager: streams audio to remote broadcast servers",
+    "ChannelProcessingManager: manages decoding pipeline for each channel",
+    "SDRTrunk main class entrypoint: io.github.dsheirer.gui.SDRTrunk"
+  ]
+}

@@ -1,0 +1,190 @@
+---
+title: "SDRTrunk user preferences: audio, recording, and calibration"
+description: "Reference for every SDRTrunk preference: directories, recording format, audio playback, duplicate call detection, identifier display, and SIMD vector calibration."
+---
+
+SDRTrunk stores all user-configurable settings in a single **User Preferences** dialog. This page describes every preference category, what each setting controls, and when to use vector calibration to improve DSP performance on your CPU.
+
+## Opening user preferences
+
+Open the dialog from the menu bar: **View > User Preferences**.
+
+Preferences are saved immediately when you change them and broadcast to all running components via the application event bus, so most changes take effect without restarting SDRTrunk.
+
+---
+
+## Application preferences
+
+These are general application-level settings that do not fit into a specific category.
+
+| Setting | Description |
+|---|---|
+| **Channel auto-start timeout** | Number of seconds shown on the countdown dialog before auto-start channels begin decoding at launch. Default: 10 seconds. |
+| **Automatic diagnostic monitoring** | When enabled, SDRTrunk checks for thread deadlocks every 30 seconds and generates a diagnostic report if one is detected. Enabled by default. |
+
+---
+
+## Directory preferences
+
+SDRTrunk organises all its data under a single **application root directory** — by default `SDRTrunk/` inside your home directory. Each subdirectory can be overridden independently.
+
+| Directory | Default location | Purpose |
+|---|---|---|
+| Application root | `~/SDRTrunk/` | Parent for all other directories |
+| Application logs | `~/SDRTrunk/logs/` | Rolling log files for the application |
+| Configuration | `~/SDRTrunk/configuration/` | System configuration files |
+| Event logs | `~/SDRTrunk/event_logs/` | Per-channel decode event CSV logs |
+| JMBE library | `~/SDRTrunk/jmbe/` | Location to store the JMBE audio codec JAR |
+| Playlist | `~/SDRTrunk/playlist/` | Playlist XML files |
+| Recordings | `~/SDRTrunk/recordings/` | Audio recordings (MP3 or WAV) |
+| Screen captures | `~/SDRTrunk/screen_captures/` | Screenshots taken with Alt+C |
+| Streaming | `~/SDRTrunk/streaming/` | Temporary files for audio streaming |
+
+Changing the application root automatically relocates all child directories to the new root on the next access, unless you have overridden a child directory path individually.
+
+### Storage usage thresholds
+
+You can set maximum drive-space thresholds for the recordings and event logs directories:
+
+- **Recordings max usage** — default 2,000 MB (2 GB)
+- **Event logs max usage** — default 200 MB
+
+The resource status bar at the bottom of the main window displays current usage against these thresholds.
+
+### Resetting a directory to its default
+
+Each directory has an independent reset button that removes the stored path override and lets SDRTrunk fall back to the default location relative to the application root.
+
+---
+
+## Recording preferences
+
+| Setting | Description |
+|---|---|
+| **Audio record format** | Format used when recording audio. Options are `MP3` (default) and `WAVE`. |
+
+---
+
+## MP3 preferences
+
+These settings apply when the recording format is MP3 or when streaming audio.
+
+| Setting | Description |
+|---|---|
+| **MP3 setting** | Bitrate/quality preset for the LAME encoder (e.g. 16 kbps, 32 kbps). |
+| **Input sample rate** | Audio sample rate fed into the LAME encoder. Must be supported by the selected MP3 setting. |
+| **Normalize audio before encoding** | Applies level normalization before encoding to MP3. Disabled by default. |
+
+---
+
+## Decoder preferences (JMBE library)
+
+| Setting | Description |
+|---|---|
+| **JMBE library path** | Path to the `jmbe-*.jar` file used for decoding digital voice protocols (P25 Phase 1, DMR, etc.). Without this library, SDRTrunk receives and decodes the digital frames but cannot produce audio. |
+
+The default search location is `~/SDRTrunk/jmbe/`. See [Installing JMBE](/quickstart) for download and installation steps.
+
+---
+
+## Audio playback preferences
+
+| Setting | Description |
+|---|---|
+| **Audio playback device** | The output mixer/device used for audio playback. |
+| **Channel count** | Number of simultaneous audio channels to use on the selected device. |
+| **Start tone** | Optional short tone played at the beginning of each audio segment. Toggle on/off and configure frequency and volume. |
+| **Drop tone** | Optional short tone played when an audio segment ends. Toggle on/off and configure frequency and volume. |
+
+---
+
+## Duplicate call detection preferences
+
+SDRTrunk can detect when the same call is active on more than one channel (common in trunked systems with multiple sites) and suppress redundant playback, recording, or streaming.
+
+| Setting | Description |
+|---|---|
+| **Detect duplicates by talkgroup** | Identifies duplicate calls based on the talkgroup ID. |
+| **Detect duplicates by radio** | Identifies duplicate calls based on the individual radio (source) ID. |
+| **Suppress duplicate playback** | Prevents the same call from playing through audio output more than once at the same time. |
+| **Suppress duplicate recording** | Prevents duplicate calls from being written to multiple recording files simultaneously. |
+| **Suppress duplicate streaming** | Prevents duplicate calls from being streamed more than once. |
+| **Patch group streaming** | Controls how patch groups (linked talkgroups) are streamed. |
+
+---
+
+## Talkgroup format preferences
+
+These settings control how identifiers such as talkgroup IDs and radio IDs are displayed in the UI and in event logs.
+
+| Setting | Description |
+|---|---|
+| **Talkgroup format** | Display format for talkgroup IDs — decimal, hexadecimal, or formatted (e.g. fleet-subfleet for some protocols). |
+
+---
+
+## Decode event preferences
+
+Controls how decode events are displayed in the channel event log panel.
+
+---
+
+## Vector calibration (SIMD optimization)
+
+SDRTrunk uses the [Project Panama Vector API](https://openjdk.org/projects/panama/) (currently in incubator in JDK 25) to run signal-processing operations using CPU SIMD instructions. Calibration benchmarks both scalar (standard Java) and vector (SIMD) implementations of each DSP operation — filters, demodulators, oscillators, sample converters, and more — and stores the faster result.
+
+### When to run calibration
+
+- On first launch, SDRTrunk detects that calibration has not been performed and prompts you to run it.
+- After a significant hardware change (e.g. new CPU).
+- If you notice that CPU usage seems unexpectedly high compared to previous runs.
+
+### How to run calibration
+
+<Steps>
+  <Step title="Open User Preferences">
+    Go to **View > User Preferences** in the menu bar.
+  </Step>
+  <Step title="Navigate to the Vector Calibration section">
+    Select **Vector Calibration** in the preference categories panel on the left.
+  </Step>
+  <Step title="Start calibration">
+    Click the **Calibrate** button. The process runs a benchmark for each DSP operation (AM and FM demodulators, FIR filters, half-band filters, oscillators, gain, mixers, sample converters, and sync correlators) and saves the result.
+  </Step>
+  <Step title="Restart SDRTrunk">
+    Restart the application so the calibration results take effect for all running channels.
+  </Step>
+</Steps>
+
+<Note>
+Calibration can take a minute or two depending on your hardware. SDRTrunk remains responsive during calibration but you should avoid starting channels until it completes.
+</Note>
+
+| Setting | Description |
+|---|---|
+| **Vector (SIMD) enabled** | Master switch for using SIMD-optimised implementations. Disable this only for debugging purposes. |
+| **Hide calibration dialog on startup** | Suppresses the first-launch calibration prompt. Calibration can still be triggered manually from the preferences dialog. |
+
+---
+
+## Tuner preferences
+
+Controls multi-frequency source behaviour for channels that span more than one frequency.
+
+---
+
+## JavaFX preferences
+
+Stores the position and size of JavaFX-based windows (playlist editor, user preferences dialog, etc.) so they reopen in the same location.
+
+---
+
+## Swing preferences
+
+Stores the position, size, and maximised state of the main application window and its split-pane panels. These are restored automatically on the next launch.
+
+---
+
+## Radio Reference preferences
+
+Credentials and settings for the RadioReference.com web service integration, used to import system and channel data directly into SDRTrunk playlists.

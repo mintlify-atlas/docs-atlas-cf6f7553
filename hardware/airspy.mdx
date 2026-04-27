@@ -1,0 +1,205 @@
+---
+title: "Airspy R820T setup and gain mode configuration guide"
+description: "Set up Airspy R820T and Mini receivers in SDRTrunk. Covers driver installation, sample rate selection, and LNA, mixer, and IF gain configuration."
+---
+
+Airspy receivers are high-performance USB SDR devices designed for demanding monitoring applications. SDRTrunk supports the **Airspy R820T** (including the Airspy Mini), which uses the same Rafael Micro R820T chipset as many RTL-SDR dongles but pairs it with a higher-quality ADC and tighter USB interface for improved dynamic range.
+
+## Supported models
+
+| Model | SDRTrunk identifier | Frequency range |
+|-------|---------------------|-----------------|
+| Airspy R820T | `AIRSPY_R820T` | 24 MHz – 1.8 GHz |
+| Airspy Mini | `AIRSPY_R820T` | 24 MHz – 1.8 GHz |
+
+<Note>
+  The Airspy HF+ (`AIRSPY_HF_PLUS`) appears in SDRTrunk's internal tuner type list but is not currently enumerated as a supported USB tuner in the active codebase. This page covers the Airspy R820T family.
+</Note>
+
+## Sample rates
+
+The Airspy firmware reports the available sample rates at runtime. SDRTrunk queries the device at startup and populates the sample rate list dynamically. The default rate is **10.00 MHz** if the device supports it.
+
+Common sample rates reported by Airspy firmware include:
+
+| Sample rate | Usable bandwidth (approx.) |
+|-------------|---------------------------|
+| 2.500 MHz | ~60% (1.50 MHz) |
+| 3.000 MHz | ~66% (1.98 MHz) |
+| 6.000 MHz | ~83% (4.98 MHz) |
+| **10.000 MHz** | **~90% (9.00 MHz) — default** |
+
+The usable bandwidth percentage varies with sample rate due to filter roll-off:
+
+| Sample rate | Usable bandwidth |
+|-------------|-----------------|
+| 10.000 MHz | 90% |
+| 6.000 MHz | 83% |
+| 3.000 MHz | 66% |
+| 2.500 MHz | 60% |
+
+<Tip>
+  The 10 MHz sample rate provides the best balance of bandwidth and usable spectrum. Lower rates are available if your system cannot sustain full USB throughput.
+</Tip>
+
+## Driver installation
+
+<Tabs>
+  <Tab title="Windows">
+    Airspy devices require the **WinUSB** driver on Windows. Use the Zadig tool to install it.
+
+    <Steps>
+      <Step title="Download Zadig">
+        Download Zadig from [zadig.akeo.ie](https://zadig.akeo.ie) and run the executable directly — no installation is required.
+      </Step>
+      <Step title="Connect your Airspy device">
+        Plug the Airspy into a USB port.
+      </Step>
+      <Step title="List all devices">
+        In Zadig, open **Options** and check **List All Devices**.
+      </Step>
+      <Step title="Select your Airspy">
+        Choose your Airspy device from the dropdown. It typically appears as **Airspy** or **AIRSPY**.
+      </Step>
+      <Step title="Install WinUSB">
+        Confirm the target driver shows **WinUSB** and click **Install Driver**.
+      </Step>
+      <Step title="Launch SDRTrunk">
+        Start SDRTrunk. The Airspy should appear in the tuner manager.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Linux">
+    Linux does not load a conflicting kernel driver for Airspy devices, but you do need udev rules to allow non-root access.
+
+    <Steps>
+      <Step title="Install the airspy package or tools">
+        Install the airspy package for your distribution:
+
+        ```bash
+        # Debian/Ubuntu
+        sudo apt install airspy
+
+        # Fedora
+        sudo dnf install airspy
+
+        # Arch Linux
+        sudo pacman -S airspy
+        ```
+
+        This installs udev rules and the `airspy_info` utility.
+      </Step>
+      <Step title="Verify udev rules are installed">
+        Check that the rules file exists:
+
+        ```bash
+        ls /etc/udev/rules.d/ | grep airspy
+        ```
+
+        If you installed from source, copy the rules manually from the source tree:
+
+        ```bash
+        sudo cp host/libairspy/airspy.rules /etc/udev/rules.d/
+        sudo udevadm control --reload-rules
+        ```
+      </Step>
+      <Step title="Add your user to the plugdev group">
+        ```bash
+        sudo usermod -aG plugdev $USER
+        ```
+
+        Log out and back in for the change to take effect.
+      </Step>
+      <Step title="Verify the device is accessible">
+        Plug in your Airspy and run:
+
+        ```bash
+        airspy_info
+        ```
+
+        You should see firmware version, serial number, and supported sample rates printed.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="macOS">
+    macOS does not require a special driver for Airspy devices. Install the optional tools with Homebrew to verify the device before launching SDRTrunk.
+
+    <Steps>
+      <Step title="Install airspy tools (optional)">
+        ```bash
+        brew install airspy
+        ```
+      </Step>
+      <Step title="Connect your Airspy device">
+        Plug the Airspy into a USB port.
+      </Step>
+      <Step title="Verify the device is accessible">
+        ```bash
+        airspy_info
+        ```
+      </Step>
+      <Step title="Launch SDRTrunk">
+        Open SDRTrunk. The Airspy should appear in the tuner manager.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Configuration in SDRTrunk
+
+Open the tuner editor from the **Tuners** tab once SDRTrunk detects your Airspy.
+
+### Sample rate
+
+Select the sample rate from the list populated by the device firmware. Higher rates capture more spectrum simultaneously but require more USB bandwidth and CPU.
+
+### Gain modes
+
+Airspy gain is configured in one of three modes:
+
+| Mode | Description |
+|------|-------------|
+| **Linearity** | Preset LNA/Mixer/IF combinations optimized for linear (low-distortion) reception. Values 1–22. Default is 14. |
+| **Sensitivity** | Preset LNA/Mixer/IF combinations optimized for maximum sensitivity. Values 1–22. Default is 10. |
+| **Custom** | Manual control over LNA, Mixer, and IF gain stages independently. |
+
+### Custom gain controls
+
+When using Custom mode, you control three independent gain stages:
+
+| Stage | Range | Default | Description |
+|-------|-------|---------|-------------|
+| **LNA gain** | 0–14 | 7 | Low-noise amplifier at the RF front end |
+| **Mixer gain** | 0–15 | 9 | Mixer stage gain |
+| **IF gain** | 0–15 | 9 | Intermediate frequency (VGA) gain |
+
+You can also enable automatic gain control (AGC) independently for the LNA and Mixer stages:
+
+- **LNA AGC** — enables automatic gain adjustment for the LNA stage.
+- **Mixer AGC** — enables automatic gain adjustment for the Mixer stage.
+
+<Tip>
+  Start with Linearity mode at level 14 or Sensitivity mode at level 10. Switch to Custom mode only when you need fine-grained control for a specific reception scenario.
+</Tip>
+
+### Frequency and PPM correction
+
+- **Frequency** — center frequency in MHz.
+- **PPM correction** — software frequency offset correction in parts per million. Airspy devices use a precision TCXO oscillator and generally require little or no PPM correction.
+
+## Performance tips
+
+<AccordionGroup>
+  <Accordion title="Optimizing gain for trunked radio monitoring">
+    Trunked radio signals are typically 12.5 kHz or 25 kHz wide and transmitted at moderate power levels. Use Linearity mode at level 14–18 as a starting point. If you see strong adjacent signals causing intermodulation, reduce the gain level.
+  </Accordion>
+  <Accordion title="Sample rate and channel capacity">
+    At 10 MHz, SDRTrunk can monitor approximately 9 MHz of usable spectrum simultaneously. A busy trunked system with channels spread across 5–8 MHz fits comfortably within a single 10 MHz tuner window, reducing the number of tuners you need.
+  </Accordion>
+  <Accordion title="USB connection quality">
+    Connect the Airspy directly to a USB port on your computer rather than through a hub. At 10 MHz sample rate, the device generates sustained USB data throughput that some hubs cannot maintain reliably.
+  </Accordion>
+  <Accordion title="Airspy Mini vs. full-size Airspy">
+    The Airspy Mini and full-size Airspy R820T use the same SDRTrunk driver and configuration. The Mini is physically smaller and draws slightly less power, but has the same frequency coverage and sample rate options.
+  </Accordion>
+</AccordionGroup>

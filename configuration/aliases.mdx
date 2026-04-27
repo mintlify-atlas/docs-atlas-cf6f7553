@@ -1,0 +1,121 @@
+---
+title: "Setting up aliases to identify talkgroups in SDRTrunk"
+description: "Set up aliases in SDRTrunk to assign human-readable names, colors, icons, and actions to talkgroups and radio IDs decoded from your channels."
+---
+
+Aliases give human-readable names and automated behaviors to the identifiers SDRTrunk decodes — talkgroups, radio IDs, tone sequences, and others. Each alias belongs to an alias list, which is assigned to one or more channels. This page explains how aliases and alias lists work, which identifier types are supported, and how to configure alias properties and actions.
+
+## What an alias list is
+
+An alias list is a named collection of aliases. You create one or more alias lists in the Playlist Editor and then assign each alias list to the channels that should use it. When a channel decodes an identifier (for example, a talkgroup number), SDRTrunk looks up that identifier in the alias list assigned to the channel and applies the matching alias.
+
+## Creating an alias list and adding aliases
+
+<Steps>
+  <Step title="Open the Playlist Editor">
+    Go to **View** > **Playlist Editor** and select the **Aliases** tab.
+  </Step>
+  <Step title="Create an alias list">
+    Click **New Alias List** and enter a name. This name appears in the alias list dropdown on each channel editor.
+  </Step>
+  <Step title="Add an alias">
+    With your alias list selected, click the **+** (Add) button. A new alias row appears in the list.
+  </Step>
+  <Step title="Set the alias name and properties">
+    Enter a **Name** for the alias. Optionally choose a **Color**, **Icon**, and **Group** label.
+  </Step>
+  <Step title="Add identifiers">
+    Click **Add ID** and choose the identifier type (for example, Talkgroup). Enter the protocol and the numeric value. You can add multiple identifiers to one alias.
+  </Step>
+  <Step title="Add actions">
+    Click **Add Action** to attach behaviors such as Beep, Record, or Stream to this alias. See [Alias actions](#alias-actions) below.
+  </Step>
+</Steps>
+
+## Supported identifier types
+
+The following identifier types can be attached to an alias:
+
+<AccordionGroup>
+  <Accordion title="Talkgroup">
+    Matches a single talkgroup value for a specific protocol (for example, P25, DMR, MPT-1327). You must select the protocol from the dropdown before entering the talkgroup number.
+  </Accordion>
+  <Accordion title="Talkgroup range">
+    Matches any talkgroup value that falls within a numeric range for a given protocol. Use this to alias an entire fleet of talkgroups with one entry.
+  </Accordion>
+  <Accordion title="Radio ID">
+    Matches a single radio unit identifier for a specific protocol. Useful for identifying individual radios by their unit ID.
+  </Accordion>
+  <Accordion title="Radio ID range">
+    Matches any radio ID within a numeric range for a given protocol.
+  </Accordion>
+  <Accordion title="P25 fully qualified talkgroup">
+    Matches a P25 talkgroup that includes the full WACN/System/Talkgroup address. Use this for inter-system P25 calls.
+  </Accordion>
+  <Accordion title="P25 fully qualified radio ID">
+    Matches a P25 radio ID that includes the full WACN/System/Radio address.
+  </Accordion>
+  <Accordion title="ESN">
+    Matches an Electronic Serial Number decoded by compatible protocols.
+  </Accordion>
+  <Accordion title="Tone sequence">
+    Matches a two-tone or other tone sequence decoded from analog channels.
+  </Accordion>
+  <Accordion title="DCS (Digital Coded Squelch)">
+    Matches a DCS code decoded on analog FM channels.
+  </Accordion>
+  <Accordion title="Unit status / User status">
+    Matches a numeric status code transmitted by a radio unit.
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+If two aliases in the same alias list have overlapping identifiers (for example, two aliases with the same talkgroup number), SDRTrunk flags the overlap visually in the editor. Overlapping aliases produce unpredictable matching results.
+</Warning>
+
+## Alias properties
+
+| Property | Description |
+|---|---|
+| **Name** | The human-readable label displayed in the Now Playing panel and audio recordings |
+| **Group** | An optional grouping tag for organizing aliases within the editor |
+| **Color** | An RGBA integer color applied to this alias in the display |
+| **Icon** | An icon name drawn next to the alias name in the Now Playing panel |
+| **Priority** | Audio playback priority (1 = highest, 100 = default). Set to **Do Not Monitor** (-1) to suppress audio for this alias |
+
+### Audio playback priority
+
+Priority is stored as a special identifier of type `PRIORITY` attached to the alias. Lower numbers take precedence:
+
+- Priority **1** is the highest priority and always interrupts lower-priority audio.
+- Priority **100** is the default when no priority is explicitly set.
+- **Do Not Monitor** (-1) suppresses audio and tracking for this alias entirely.
+
+When multiple aliases match at the same time, SDRTrunk plays the audio from the alias with the lowest priority number.
+
+## Alias actions
+
+Actions define what SDRTrunk does when an identifier matching this alias is active. Add one or more actions to a single alias.
+
+| Action | Description |
+|---|---|
+| **Beep** | Plays an audible beep through the system speaker when this alias becomes active |
+| **Play Clip** | Plays a specified audio clip file when this alias becomes active |
+| **Run Script** | Executes a script file when this alias becomes active |
+
+### Recording and streaming
+
+Recording and streaming behaviors are controlled through alias identifier types rather than alias actions:
+
+- **Record**: Add a `Record` identifier to the alias. When any call involving this alias is decoded, SDRTrunk records the audio to disk in the format configured in your user preferences (WAV or MP3).
+- **Broadcast Channel**: Add a `Broadcast Channel` (Audio Broadcast Channel) identifier and select the name of a configured streaming server. When a call involving this alias is decoded, SDRTrunk streams the audio to that server.
+
+<Note>
+An alias is considered "recordable" when it contains at least one `Record` identifier, and "streamable" when it contains at least one `Broadcast Channel` identifier. These states are reflected in the alias list display.
+</Note>
+
+## Talkgroup ranges and overlap detection
+
+When you add a `Talkgroup Range` identifier, SDRTrunk checks whether the new range overlaps with any existing talkgroup or range in the same alias list. If an overlap is detected, the overlapping identifiers are flagged in the editor so you can resolve the conflict.
+
+For exact talkgroup matches, the specific value takes precedence over a range that contains the same value.
